@@ -6,7 +6,7 @@ import { useState, useCallback, useMemo } from "react";
 import { nanoid } from "nanoid";
 
 import { cn } from "@/lib/utils";
-import { CHAT_ENDPOINT } from "@/lib/api";
+import { CHAT_ENDPOINT, parseBrainLogFromData } from "@/lib/api";
 import { useGlassBox } from "@/components/glass-box";
 
 // AI Elements
@@ -28,6 +28,7 @@ import {
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
 import { Loader } from "@/components/ai-elements/loader";
+import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
 
 // Icons
 import { BotIcon, UserIcon } from "lucide-react";
@@ -39,6 +40,14 @@ import { BotIcon, UserIcon } from "lucide-react";
 interface ChatInterfaceProps {
   className?: string;
 }
+
+// Quick start suggestions for the chat
+const STARTER_SUGGESTIONS = [
+  "Tell me about your experience",
+  "What's your tech stack?",
+  "Explain the Glass Box architecture",
+  "What projects have you worked on?",
+];
 
 // Helper to extract text content from UIMessage parts
 function getMessageText(message: UIMessage): string {
@@ -53,7 +62,7 @@ function getMessageText(message: UIMessage): string {
 // ============================================================================
 
 export function ChatInterface({ className }: ChatInterfaceProps) {
-  const { addEntry, isEnabled } = useGlassBox();
+  const { addEntry, addEntries, isEnabled } = useGlassBox();
   const [input, setInput] = useState("");
 
   // Create transport that sends UI Messages format (required by VercelAIAdapter)
@@ -67,6 +76,15 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
   const chatHelpers = useChat({
     transport,
     id: "glass-box-chat",
+    onData: (data: unknown[]) => {
+      // Parse and add Brain Log entries from the stream
+      if (isEnabled && data.length > 0) {
+        const entries = parseBrainLogFromData(data);
+        if (entries.length > 0) {
+          addEntries(entries);
+        }
+      }
+    },
     onFinish: ({ message }: { message: UIMessage }) => {
       // Log completion with performance data
       if (isEnabled) {
@@ -115,6 +133,11 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
     []
   );
 
+  // Handle suggestion click
+  const handleSuggestionClick = useCallback((suggestion: string) => {
+    setInput(suggestion);
+  }, []);
+
   // Handle form submission
   const handleFormSubmit = useCallback(
     (e?: { preventDefault?: () => void }) => {
@@ -153,7 +176,20 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
               title="Welcome to Glass Box"
               description="Ask me anything about my experience, this system's architecture, or the codebase."
               icon={<BotIcon className="size-8" />}
-            />
+            >
+              {/* Quick Start Suggestions */}
+              <div className="mt-6">
+                <Suggestions className="justify-center">
+                  {STARTER_SUGGESTIONS.map((suggestion) => (
+                    <Suggestion
+                      key={suggestion}
+                      suggestion={suggestion}
+                      onClick={handleSuggestionClick}
+                    />
+                  ))}
+                </Suggestions>
+              </div>
+            </ConversationEmptyState>
           ) : (
             messages.map((message, index) => (
               <ChatMessage

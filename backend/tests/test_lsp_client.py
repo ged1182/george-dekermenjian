@@ -374,6 +374,7 @@ class TestGlobalLSPManager:
     async def test_get_manager_requires_workspace_root(self):
         # Reset global manager
         import app.tools.lsp_client as lsp_module
+
         lsp_module._lsp_manager = None
 
         with pytest.raises(ValueError, match="workspace_root is required"):
@@ -383,6 +384,7 @@ class TestGlobalLSPManager:
     async def test_shutdown_handles_none_manager(self):
         # Should not raise even if manager is None
         import app.tools.lsp_client as lsp_module
+
         lsp_module._lsp_manager = None
 
         await shutdown_lsp_manager()  # Should not raise
@@ -559,11 +561,17 @@ class TestLSPClientAsyncMethods:
                         mock_send.return_value = [
                             {
                                 "uri": "file:///test/file1.ts",
-                                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 5}},
+                                "range": {
+                                    "start": {"line": 0, "character": 0},
+                                    "end": {"line": 0, "character": 5},
+                                },
                             },
                             {
                                 "uri": "file:///test/file2.ts",
-                                "range": {"start": {"line": 5, "character": 0}, "end": {"line": 5, "character": 5}},
+                                "range": {
+                                    "start": {"line": 5, "character": 0},
+                                    "end": {"line": 5, "character": 5},
+                                },
                             },
                         ]
 
@@ -597,7 +605,10 @@ class TestLSPClientAsyncMethods:
                         mock_send.return_value = [
                             {
                                 "uri": "file:///test/ref.ts",
-                                "range": {"start": {"line": 10, "character": 0}, "end": {"line": 10, "character": 5}},
+                                "range": {
+                                    "start": {"line": 10, "character": 0},
+                                    "end": {"line": 10, "character": 5},
+                                },
                             }
                         ]
 
@@ -619,7 +630,10 @@ class TestLSPClientAsyncMethods:
                     with patch("pathlib.Path.read_text", return_value="const x = 1;"):
                         mock_send.return_value = {
                             "contents": "const x: number",
-                            "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 5}},
+                            "range": {
+                                "start": {"line": 0, "character": 0},
+                                "end": {"line": 0, "character": 5},
+                            },
                         }
 
                         result = await client.hover("/test/file.ts", 0, 0)
@@ -639,7 +653,10 @@ class TestLSPClientAsyncMethods:
                 with patch.object(client, "_close_document"):
                     with patch("pathlib.Path.read_text", return_value="const x = 1;"):
                         mock_send.return_value = {
-                            "contents": {"kind": "markdown", "value": "**Type**: number"},
+                            "contents": {
+                                "kind": "markdown",
+                                "value": "**Type**: number",
+                            },
                         }
 
                         result = await client.hover("/test/file.ts", 0, 0)
@@ -703,7 +720,10 @@ class TestLSPClientAsyncMethods:
                                 "kind": 12,
                                 "location": {
                                     "uri": "file:///test/file.ts",
-                                    "range": {"start": {"line": 0, "character": 0}, "end": {"line": 5, "character": 0}},
+                                    "range": {
+                                        "start": {"line": 0, "character": 0},
+                                        "end": {"line": 5, "character": 0},
+                                    },
                                 },
                             }
                         ]
@@ -723,19 +743,33 @@ class TestLSPClientAsyncMethods:
         with patch.object(client, "_send_request", new_callable=AsyncMock) as mock_send:
             with patch.object(client, "_open_document"):
                 with patch.object(client, "_close_document"):
-                    with patch("pathlib.Path.read_text", return_value="class MyClass {}"):
+                    with patch(
+                        "pathlib.Path.read_text", return_value="class MyClass {}"
+                    ):
                         mock_send.return_value = [
                             {
                                 "name": "MyClass",
                                 "kind": 5,
-                                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 10, "character": 0}},
-                                "selectionRange": {"start": {"line": 0, "character": 6}, "end": {"line": 0, "character": 13}},
+                                "range": {
+                                    "start": {"line": 0, "character": 0},
+                                    "end": {"line": 10, "character": 0},
+                                },
+                                "selectionRange": {
+                                    "start": {"line": 0, "character": 6},
+                                    "end": {"line": 0, "character": 13},
+                                },
                                 "children": [
                                     {
                                         "name": "myMethod",
                                         "kind": 6,
-                                        "range": {"start": {"line": 2, "character": 0}, "end": {"line": 5, "character": 0}},
-                                        "selectionRange": {"start": {"line": 2, "character": 2}, "end": {"line": 2, "character": 10}},
+                                        "range": {
+                                            "start": {"line": 2, "character": 0},
+                                            "end": {"line": 5, "character": 0},
+                                        },
+                                        "selectionRange": {
+                                            "start": {"line": 2, "character": 2},
+                                            "end": {"line": 2, "character": 10},
+                                        },
                                     }
                                 ],
                             }
@@ -762,7 +796,10 @@ class TestLSPClientAsyncMethods:
                     "kind": 12,
                     "location": {
                         "uri": "file:///test/file.ts",
-                        "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 0}},
+                        "range": {
+                            "start": {"line": 0, "character": 0},
+                            "end": {"line": 0, "character": 0},
+                        },
                     },
                 }
             ]
@@ -782,18 +819,28 @@ class TestLSPClientAsyncMethods:
         with patch.object(client, "_send_request", new_callable=AsyncMock) as mock_send:
             with patch.object(client, "_open_document"):
                 with patch.object(client, "_close_document"):
-                    with patch("pathlib.Path.read_text", return_value="function test() {}"):
+                    with patch(
+                        "pathlib.Path.read_text", return_value="function test() {}"
+                    ):
                         mock_send.return_value = [
                             {
                                 "name": "test",
                                 "kind": 12,
                                 "uri": "file:///test/file.ts",
-                                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 20}},
-                                "selectionRange": {"start": {"line": 0, "character": 9}, "end": {"line": 0, "character": 13}},
+                                "range": {
+                                    "start": {"line": 0, "character": 0},
+                                    "end": {"line": 0, "character": 20},
+                                },
+                                "selectionRange": {
+                                    "start": {"line": 0, "character": 9},
+                                    "end": {"line": 0, "character": 13},
+                                },
                             }
                         ]
 
-                        result = await client.prepare_call_hierarchy("/test/file.ts", 0, 10)
+                        result = await client.prepare_call_hierarchy(
+                            "/test/file.ts", 0, 10
+                        )
 
         assert len(result) == 1
         assert result[0].name == "test"
@@ -820,11 +867,20 @@ class TestLSPClientAsyncMethods:
                         "name": "caller",
                         "kind": 12,
                         "uri": "file:///test/caller.ts",
-                        "range": {"start": {"line": 5, "character": 0}, "end": {"line": 10, "character": 0}},
-                        "selectionRange": {"start": {"line": 5, "character": 9}, "end": {"line": 5, "character": 15}},
+                        "range": {
+                            "start": {"line": 5, "character": 0},
+                            "end": {"line": 10, "character": 0},
+                        },
+                        "selectionRange": {
+                            "start": {"line": 5, "character": 9},
+                            "end": {"line": 5, "character": 15},
+                        },
                     },
                     "fromRanges": [
-                        {"start": {"line": 7, "character": 2}, "end": {"line": 7, "character": 8}},
+                        {
+                            "start": {"line": 7, "character": 2},
+                            "end": {"line": 7, "character": 8},
+                        },
                     ],
                 }
             ]

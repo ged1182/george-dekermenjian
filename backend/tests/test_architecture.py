@@ -12,7 +12,6 @@ from app.tools.architecture import (
     ModuleStructureResult,
     DependencyEdge,
     DependencyGraphResult,
-    SchemaInfo,
     SchemaField,
     APIContractsResult,
     ArchitectureOverview,
@@ -21,7 +20,6 @@ from app.tools.architecture import (
     _should_skip_path,
     _infer_purpose,
     _get_main_exports_python,
-    _get_main_exports_typescript,
     _extract_python_imports,
     _extract_pydantic_schemas,
     get_module_structure,
@@ -94,7 +92,9 @@ class TestInferPurpose:
         assert _infer_purpose("tests", []) == "Test files"
 
     def test_infers_tests_from_files(self):
-        assert _infer_purpose("unknown", ["test_main.py", "test_utils.py"]) == "Test files"
+        assert (
+            _infer_purpose("unknown", ["test_main.py", "test_utils.py"]) == "Test files"
+        )
 
     def test_infers_styles_from_files(self):
         assert _infer_purpose("unknown", ["main.css", "theme.scss"]) == "Stylesheets"
@@ -254,7 +254,10 @@ class TestGetModuleStructure:
     def test_detects_architecture_type(self, mock_codebase_root):
         result = get_module_structure()
         # Should detect full-stack architecture
-        assert "Full-stack" in result.architecture_type or "Backend" in result.architecture_type
+        assert (
+            "Full-stack" in result.architecture_type
+            or "Backend" in result.architecture_type
+        )
 
     def test_assigns_layers(self, mock_codebase_root):
         result = get_module_structure()

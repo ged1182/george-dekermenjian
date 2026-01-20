@@ -22,6 +22,7 @@ def mock_codebase_root():
     with patch.dict(os.environ, {"CODEBASE_ROOT": project_root}):
         # Clear settings cache to pick up new env var
         from app.config import get_settings
+
         get_settings.cache_clear()
         yield project_root
         get_settings.cache_clear()

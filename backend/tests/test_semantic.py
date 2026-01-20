@@ -19,7 +19,6 @@ from app.tools.semantic import (
     TypeInfo,
     DocumentSymbol,
     DocumentSymbolsResult,
-    CallerInfo,
     CallHierarchyResult,
     SYMBOL_KINDS,
     _uri_to_path,
@@ -270,20 +269,24 @@ class TestGoToDefinition:
         assert "LSP" in result.error or "not available" in result.error.lower()
 
     @pytest.mark.asyncio
-    async def test_returns_definitions_with_lsp(self, mock_codebase_root, mock_lsp_manager):
+    async def test_returns_definitions_with_lsp(
+        self, mock_codebase_root, mock_lsp_manager
+    ):
         mock_get, manager = mock_lsp_manager
 
         # Create mock LSP client
         mock_client = MagicMock()
-        mock_client.go_to_definition = AsyncMock(return_value=[
-            MagicMock(
-                uri="file:///test/app/config.py",
-                range=MagicMock(
-                    start=MagicMock(line=10, character=0),
-                    end=MagicMock(line=10, character=8),
-                ),
-            )
-        ])
+        mock_client.go_to_definition = AsyncMock(
+            return_value=[
+                MagicMock(
+                    uri="file:///test/app/config.py",
+                    range=MagicMock(
+                        start=MagicMock(line=10, character=0),
+                        end=MagicMock(line=10, character=8),
+                    ),
+                )
+            ]
+        )
         manager.get_client.return_value = mock_client
         mock_get.return_value = manager
 
@@ -391,7 +394,6 @@ class TestGoToDefinitionWithMockedLSP:
     @pytest.mark.asyncio
     async def test_finds_definition_and_returns_preview(self, mock_codebase_root):
         """Test successful definition lookup with mocked LSP."""
-        from app.tools.lsp_client import Location, Position, Range
 
         with patch("app.tools.semantic.get_lsp_manager") as mock_get:
             manager = MagicMock()
@@ -435,7 +437,9 @@ class TestFindAllReferencesWithMockedLSP:
             manager.get_client.return_value = mock_client
             mock_get.return_value = manager
 
-            result = await find_all_references("backend/app/config.py", "Settings", 10, 0)
+            result = await find_all_references(
+                "backend/app/config.py", "Settings", 10, 0
+            )
 
             assert isinstance(result, ReferencesResult)
             mock_client.find_references.assert_called_once()
@@ -577,7 +581,9 @@ class TestSemanticToolsExceptionHandling:
         with patch("app.tools.semantic.get_lsp_manager") as mock_get:
             mock_get.side_effect = Exception("Connection error")
 
-            result = await find_all_references("backend/app/config.py", "Settings", 10, 0)
+            result = await find_all_references(
+                "backend/app/config.py", "Settings", 10, 0
+            )
 
             assert result.success is False
             assert "Connection error" in result.error

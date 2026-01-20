@@ -1,7 +1,5 @@
 """Tests for experience tools."""
 
-import pytest
-
 from app.tools.experience import (
     get_professional_experience,
     get_latest_experience,
@@ -74,10 +72,11 @@ def test_get_professional_experience():
 def test_get_latest_experience():
     """Test get_latest_experience tool returns most recent role only."""
     result = get_latest_experience()
-    # Should return only one experience
-    assert len(result.experiences) == 1
+    # Should return one experience
+    assert result.experience is not None
     # Should be the most recent (Fundcraft)
-    assert result.experiences[0].company == EXPERIENCES[0].company
+    assert result.experience.company == EXPERIENCES[0].company
+    assert result.summary is not None
 
 
 def test_get_skills():
@@ -105,4 +104,5 @@ def test_get_profile():
     """Test get_profile tool returns profile info."""
     result = get_profile()
     assert result.profile.name == PROFILE.name
-    assert result.summary is not None
+    assert result.profile.title is not None
+    assert result.profile.email is not None

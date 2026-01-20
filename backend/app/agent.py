@@ -40,10 +40,13 @@ When a question is outside your scope, explain your boundaries.
 
 ## About George
 
-George is a Staff Software Engineer specializing in AI/ML systems and
-production-grade agentic architectures. He has extensive experience building
-document intelligence platforms, real-time inference pipelines, and
-multi-tenant SaaS systems on Google Cloud Platform.
+George is a Director of Data & AI specializing in production AI systems with
+full audit trails for regulated industries. He is a hybrid technical executive
+who builds GenAI workflows that satisfy compliance requirements (AIFMD, GDPR)
+while delivering measurable ROI. His track record includes $1.2M digital
+transformations, 99.5% latency reductions, and AI document classification
+systems. He is a former mathematics professor who translates complex systems
+into business outcomes.
 
 ## About This Portfolio
 

@@ -2,8 +2,6 @@
 
 import time
 
-import pytest
-
 from app.schemas.brain_log import (
     LogEntryType,
     LogEntryStatus,
@@ -44,7 +42,7 @@ class TestBrainLogEntry:
         """Test that default values are set correctly."""
         entry = BrainLogEntry(type=LogEntryType.INPUT, title="Test")
         assert entry.id is not None
-        assert entry.timestamp > 0
+        assert entry.timestamp is not None
         assert entry.status == LogEntryStatus.SUCCESS
         assert entry.duration_ms is None
         assert entry.details == {}
@@ -95,7 +93,10 @@ class TestRoutingLogEntry:
         assert "get_skills" in entry.title
         assert entry.details["selected_tool"] == "get_skills"
         assert entry.details["reason"] == "User asked about skills"
-        assert entry.details["alternatives_considered"] == ["get_experience", "get_profile"]
+        assert entry.details["alternatives_considered"] == [
+            "get_experience",
+            "get_profile",
+        ]
 
     def test_create_direct_response(self):
         """Test creating entry for direct response (no tool)."""
