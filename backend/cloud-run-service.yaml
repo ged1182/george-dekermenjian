@@ -1,0 +1,136 @@
+# Glass Box Portfolio - Cloud Run Service Configuration
+#
+# This is a Knative serving configuration for Google Cloud Run.
+# It defines the service's scaling, resources, and environment.
+#
+# Deploy with:
+#   gcloud run services replace cloud-run-service.yaml --region=us-central1
+#
+# Or use the deploy script:
+#   ./scripts/deploy.sh
+#
+# Note: Replace PROJECT_ID with your actual GCP project ID before deploying.
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: glass-box-backend
+  labels:
+    app: glass-box-portfolio
+    component: backend
+  annotations:
+    # Allow unauthenticated access (public API)
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        # Scaling Configuration
+        # -----------------------
+        # minScale: 0 = Scale to zero when idle (cost savings)
+        # maxScale: 3 = Limit max instances (cost control)
+        # For faster cold starts, set minScale: 1
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+
+        # Use second-generation execution environment for better performance
+        run.googleapis.com/execution-environment: gen2
+
+        # CPU is only allocated during request processing (cost savings)
+        # Set to "cpu-always" if you need background processing
+        run.googleapis.com/cpu-throttling: "true"
+
+        # Startup CPU boost for faster cold starts
+        run.googleapis.com/startup-cpu-boost: "true"
+
+    spec:
+      # Container Concurrency
+      # ---------------------
+      # Number of concurrent requests per container instance.
+      # FastAPI with uvicorn handles async well, so 80 is reasonable.
+      # Reduce if you see latency issues under load.
+      containerConcurrency: 80
+
+      # Request Timeout
+      # ---------------
+      # Maximum time for a request to complete.
+      # LLM calls can be slow, so 300s (5 min) allows for complex queries.
+      timeoutSeconds: 300
+
+      # Service Account (optional)
+      # Uncomment and configure if you need specific GCP permissions
+      # serviceAccountName: glass-box-backend@PROJECT_ID.iam.gserviceaccount.com
+
+      containers:
+        - image: gcr.io/PROJECT_ID/glass-box-backend:latest
+
+          # Port Configuration
+          ports:
+            - containerPort: 8080
+              name: http1
+
+          # Resource Limits
+          # ---------------
+          # memory: 512Mi is sufficient for most LLM API calls
+          # cpu: 1 core provides good performance without excessive cost
+          # Increase memory if you're doing local embeddings or large context
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "0.5"
+
+          # Environment Variables
+          env:
+            # Application Environment
+            - name: ENVIRONMENT
+              value: production
+
+            # Allowed CORS origins (comma-separated)
+            - name: ALLOWED_ORIGINS
+              value: "https://glass-box.vercel.app,https://*.vercel.app"
+
+            # Cloud Run sets PORT automatically, but we make it explicit
+            - name: PORT
+              value: "8080"
+
+            # Gemini API Key from Secret Manager
+            # Create secret: gcloud secrets create gemini-api-key --data-file=- < api_key.txt
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-api-key
+                  key: latest
+
+          # Health Checks
+          # -------------
+          # Cloud Run uses these to determine container readiness
+
+          # Startup probe: More lenient, allows for cold start initialization
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 2
+            timeoutSeconds: 5
+            failureThreshold: 30  # 60 seconds max startup time
+
+          # Liveness probe: Checks if the container is still healthy
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+  # Traffic Configuration
+  # ---------------------
+  # Route all traffic to the latest revision
+  traffic:
+    - percent: 100
+      latestRevision: true
