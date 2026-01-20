@@ -14,52 +14,31 @@ const BACKEND_URL =
   process.env.CLOUD_RUN_BACKEND_URL ||
   "https://glass-box-backend-300347125667.us-central1.run.app";
 
-// Initialize Google Auth with service account credentials
-function getGoogleAuth(): GoogleAuth {
-  const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-
-  if (!credentials) {
-    throw new Error("GOOGLE_SERVICE_ACCOUNT_KEY environment variable not set");
-  }
-
-  // Parse the JSON credentials from the environment variable
-  let parsedCredentials;
-  try {
-    parsedCredentials = JSON.parse(credentials);
-  } catch (e) {
-    throw new Error(
-      `Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY as JSON: ${e instanceof Error ? e.message : "unknown error"}`
-    );
-  }
-
-  if (!parsedCredentials.client_email || !parsedCredentials.private_key) {
-    throw new Error(
-      "GOOGLE_SERVICE_ACCOUNT_KEY is missing required fields (client_email or private_key)"
-    );
-  }
-
-  return new GoogleAuth({
-    credentials: parsedCredentials,
-  });
-}
-
 async function getIdToken(targetAudience: string): Promise<string> {
   try {
-    const auth = getGoogleAuth();
-    const client = await auth.getIdTokenClient(targetAudience);
-    const requestHeaders = await client.getRequestHeaders();
-    // getRequestHeaders returns { Authorization: string } but TypeScript types it as Headers
-    const headersObj = requestHeaders as unknown as Record<string, string>;
-    const authHeader =
-      headersObj["Authorization"] || headersObj["authorization"];
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new Error(
-        "Authorization header missing or invalid in response from Google Auth"
-      );
+    const credentialsJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+    if (!credentialsJson) {
+      throw new Error("GOOGLE_SERVICE_ACCOUNT_KEY not set");
     }
 
-    return authHeader.substring(7); // Remove "Bearer " prefix
+    const credentials = JSON.parse(credentialsJson);
+
+    // Create GoogleAuth with explicit credentials
+    const auth = new GoogleAuth({
+      credentials: credentials,
+    });
+
+    // Get ID token client for the target audience
+    const client = await auth.getIdTokenClient(targetAudience);
+
+    // Fetch the ID token
+    const token = await client.idTokenProvider.fetchIdToken(targetAudience);
+
+    if (!token) {
+      throw new Error("No ID token returned from Google Auth");
+    }
+
+    return token;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("getIdToken error:", message);
