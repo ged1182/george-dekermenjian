@@ -12,41 +12,106 @@ This is the **Glass Box Portfolio** - a production-grade demonstration of explai
 
 ```
 george-dekermenjian/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                # GitHub Actions CI pipeline
 ├── web/                          # Next.js 16 frontend
 │   ├── app/                      # App Router pages
 │   │   ├── layout.tsx            # Root layout with GlassBoxProvider
-│   │   └── page.tsx              # Main page with chat + Brain Log
+│   │   ├── page.tsx              # Main page with chat + Brain Log
+│   │   ├── profile/
+│   │   │   └── page.tsx          # Profile page
+│   │   └── globals.css           # Global styles
 │   ├── components/
 │   │   ├── ai-elements/          # AI Elements components (chat UI)
+│   │   │   ├── chain-of-thought.tsx
+│   │   │   ├── checkpoint.tsx
+│   │   │   ├── code-block.tsx
+│   │   │   ├── conversation.tsx
+│   │   │   ├── loader.tsx
+│   │   │   ├── message.tsx
+│   │   │   ├── panel.tsx
+│   │   │   ├── prompt-input.tsx
+│   │   │   ├── reasoning.tsx
+│   │   │   ├── shimmer.tsx
+│   │   │   ├── sources.tsx
+│   │   │   ├── suggestion.tsx
+│   │   │   ├── task.tsx
+│   │   │   ├── tool.tsx
+│   │   │   └── ai-elements.test.tsx
 │   │   ├── chat/                 # Chat interface components
 │   │   │   ├── ChatInterface.tsx # Main chat with AI SDK useChat
 │   │   │   └── index.ts
 │   │   ├── glass-box/            # Glass Box mode components
 │   │   │   ├── BrainLog.tsx      # Brain Log panel
+│   │   │   ├── BrainLog.test.tsx
 │   │   │   ├── GlassBoxProvider.tsx # Context for Glass Box state
+│   │   │   ├── GlassBoxProvider.test.tsx
 │   │   │   ├── GlassBoxToggle.tsx # Toggle button
+│   │   │   ├── GlassBoxToggle.test.tsx
 │   │   │   ├── LogEntry.tsx      # Individual log entry
 │   │   │   └── index.ts
+│   │   ├── tool-results/         # Tool result renderers
+│   │   │   ├── CodebaseResult.tsx
+│   │   │   ├── EducationCard.tsx
+│   │   │   ├── ExperienceCard.tsx
+│   │   │   ├── ProfileCard.tsx
+│   │   │   ├── ProjectCard.tsx
+│   │   │   ├── SkillsDisplay.tsx
+│   │   │   ├── ToolResultRenderer.tsx
+│   │   │   ├── tool-results.test.tsx
+│   │   │   ├── types.ts
+│   │   │   └── index.ts
 │   │   └── ui/                   # shadcn/ui components
-│   └── lib/
-│       ├── api.ts                # Backend API client + Brain Log types
-│       └── utils.ts              # cn() helper
+│   ├── lib/
+│   │   ├── api.ts                # Backend API client + Brain Log types
+│   │   ├── api.test.ts
+│   │   └── utils.ts              # cn() helper
+│   ├── vitest.config.ts          # Vitest configuration
+│   └── vitest.setup.ts           # Vitest setup
 ├── backend/                      # Python FastAPI backend
 │   ├── app/
+│   │   ├── __init__.py
 │   │   ├── main.py               # FastAPI entrypoint with /chat endpoint
 │   │   ├── agent.py              # pydantic-ai agent with tools
 │   │   ├── config.py             # Pydantic Settings
+│   │   ├── brain_log_stream.py   # Brain Log streaming utilities
 │   │   ├── tools/
+│   │   │   ├── __init__.py
 │   │   │   ├── experience.py     # Professional experience tools
-│   │   │   └── codebase.py       # Codebase Oracle tools
+│   │   │   ├── codebase.py       # Codebase Oracle tools
+│   │   │   ├── architecture.py   # Module structure analysis
+│   │   │   ├── semantic.py       # LSP-powered semantic analysis
+│   │   │   └── lsp_client.py     # Language Server Protocol client
 │   │   └── schemas/
+│   │       ├── __init__.py
 │   │       └── brain_log.py      # Brain Log entry schemas
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── conftest.py           # pytest fixtures
+│   │   ├── test_main.py
+│   │   ├── test_config.py
+│   │   ├── test_experience.py
+│   │   ├── test_codebase.py
+│   │   ├── test_architecture.py
+│   │   ├── test_semantic.py
+│   │   ├── test_lsp_client.py
+│   │   ├── test_brain_log.py
+│   │   └── test_brain_log_stream.py
+│   ├── scripts/
+│   │   └── deploy.sh             # Cloud Run deployment script
 │   ├── Dockerfile                # Production Docker image
 │   ├── cloud-run-service.yaml    # Cloud Run deployment config
-│   ├── scripts/deploy.sh         # Deployment script
 │   ├── pyproject.toml
-│   └── .env.example
-└── vision.md                     # Master vision document
+│   ├── uv.lock
+│   ├── .env.example
+│   └── README.md
+├── vision.md                     # Master vision document
+├── CONTRIBUTING.md               # Contribution guidelines
+├── SECURITY.md                   # Security policy
+├── LICENSE                       # MIT License
+├── Makefile                      # Development commands
+└── CLAUDE.md                     # This file
 ```
 
 ## Development Commands
@@ -59,6 +124,8 @@ pnpm install          # Install dependencies
 pnpm dev              # Start dev server (http://localhost:3000)
 pnpm build            # Production build
 pnpm lint             # Run ESLint
+pnpm typecheck        # TypeScript type checking
+pnpm test             # Run Vitest tests
 ```
 
 ### Backend (backend/)
@@ -66,8 +133,23 @@ pnpm lint             # Run ESLint
 ```bash
 cd backend
 uv sync                                    # Install dependencies
+uv sync --dev                              # Install with dev dependencies
 export GEMINI_API_KEY=your_api_key         # Set API key
 uv run uvicorn app.main:app --reload       # Start dev server (http://localhost:8000)
+uv run pytest                              # Run tests
+uv run ruff check app/                     # Lint
+uv run ruff format app/                    # Format
+uv run mypy app/                           # Type check
+```
+
+### Using Makefile
+
+```bash
+make install    # Install all dependencies
+make dev        # Run both frontend and backend
+make test       # Run all tests
+make lint       # Run linters
+make format     # Format code
 ```
 
 ### Running Both Together
@@ -82,17 +164,20 @@ uv run uvicorn app.main:app --reload       # Start dev server (http://localhost:
 - **Framework**: Next.js 16.1 with App Router and Turbopack
 - **React**: 19.x
 - **Styling**: Tailwind CSS v4 with CSS variable theming
-- **Components**: shadcn/ui (base-lyra style) + AI Elements
-- **AI Integration**: Vercel AI SDK v4 (`ai`, `@ai-sdk/react`)
-- **Icons**: Lucide React
+- **Components**: shadcn/ui + AI Elements library
+- **AI Integration**: Vercel AI SDK v5 (`ai`, `@ai-sdk/react`)
+- **Animation**: Motion (formerly Framer Motion)
+- **Icons**: Lucide React, HugeIcons
+- **Testing**: Vitest
 - **Utilities**: `cn()` helper in `lib/utils.ts` (clsx + tailwind-merge)
 
 ### Backend
-- **Runtime**: Python 3.13+
+- **Runtime**: Python 3.14+
 - **Framework**: FastAPI
 - **Agent Framework**: pydantic-ai with VercelAIAdapter for streaming
 - **LLM**: Google Gemini (`google-gla:gemini-2.0-flash`)
 - **Package Manager**: uv
+- **Testing**: pytest with httpx for async testing
 
 ## Architecture
 
@@ -102,7 +187,7 @@ The core differentiator is transparent visibility into agentic systems:
 - **Glass Box Mode**: Shows Brain Log panel with real-time agent reasoning, tool calls, validation status, and performance metrics
 
 ### Agent Tools
-The pydantic-ai agent has 6 registered tools:
+The pydantic-ai agent currently has **6 registered tools** (defined in `agent.py`):
 
 **Experience Tools** (`tools/experience.py`):
 - `get_professional_experience()` - Returns work history and roles
@@ -111,8 +196,13 @@ The pydantic-ai agent has 6 registered tools:
 
 **Codebase Oracle Tools** (`tools/codebase.py`):
 - `find_symbol(symbol_name)` - Find function/class definitions
-- `get_file_content(file_path, start_line, end_line)` - Read file content
+- `get_file_content(file_path, start_line, end_line)` - Read file content with optional line range
 - `find_references(symbol_name)` - Find all usages of a symbol
+
+**Additional Tool Modules** (available but not currently registered in agent):
+- `tools/architecture.py` - `get_module_structure()`, `get_dependency_graph()`, `get_api_contract()`
+- `tools/semantic.py` - LSP-powered `go_to_definition()`, `find_references_lsp()`, `get_hover_info()`
+- `tools/lsp_client.py` - Language Server Protocol client manager
 
 ### Brain Log Entry Types
 ```typescript
@@ -124,6 +214,8 @@ type LogEntryStatus = 'pending' | 'success' | 'failure';
 - `GET /` - API info
 - `GET /health` - Health check with uptime
 - `POST /chat` - Streaming chat endpoint (Vercel AI protocol)
+- `GET /docs` - OpenAPI documentation
+- `GET /redoc` - ReDoc documentation
 
 ## Deployment
 
@@ -152,9 +244,8 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 ### Backend (`backend/.env`)
 ```
 GEMINI_API_KEY=your_gemini_api_key
-ENVIRONMENT=development
-ALLOWED_ORIGINS=http://localhost:3000
-CODEBASE_ROOT=/path/to/repo  # For Codebase Oracle
+DEBUG=false
+CODEBASE_ROOT=/path/to/repo  # For Codebase Oracle (defaults to cwd)
 ```
 
 ## Component Patterns
@@ -171,7 +262,7 @@ cd web
 pnpm dlx ai-elements@latest add <component-name>
 ```
 
-Available: conversation, message, prompt-input, tool, reasoning, chain-of-thought, code-block, sources, loader, panel, task, checkpoint, suggestion
+Available: conversation, message, prompt-input, tool, reasoning, chain-of-thought, code-block, sources, loader, panel, task, checkpoint, suggestion, shimmer
 
 ### Path Aliases
 TypeScript path alias configured: `@/*` maps to the web root:
@@ -181,6 +272,45 @@ import { cn } from "@/lib/utils"
 import { useGlassBox } from "@/components/glass-box"
 ```
 
+## Testing
+
+### Backend Tests
+```bash
+cd backend
+uv run pytest                    # Run all tests
+uv run pytest -v                 # Verbose output
+uv run pytest --cov=app          # With coverage
+uv run pytest tests/test_main.py # Run specific file
+```
+
+### Frontend Tests
+```bash
+cd web
+pnpm test                        # Run all tests
+pnpm test:watch                  # Watch mode
+pnpm test:coverage               # With coverage
+```
+
+## Code Quality
+
+### Backend
+- **Linting**: ruff (fast Python linter)
+- **Formatting**: ruff format
+- **Type Checking**: mypy with strict mode
+- **Testing**: pytest with 90%+ coverage target
+
+### Frontend
+- **Linting**: ESLint with Next.js config
+- **Formatting**: Prettier
+- **Type Checking**: TypeScript strict mode
+- **Testing**: Vitest with React Testing Library
+
+## CI/CD
+
+GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push:
+1. Backend: lint, type check, test
+2. Frontend: lint, type check, build, test
+
 ## Phase 1 Completion Checklist
 
 - [x] Glass Box toggle shows/hides Brain Log panel
@@ -188,5 +318,7 @@ import { useGlassBox } from "@/components/glass-box"
 - [x] Brain Log shows: input received, tool calls, validation, timing
 - [x] Codebase Oracle tools implemented
 - [x] Dockerfile and Cloud Run config ready
+- [x] CI/CD pipeline configured
+- [x] Test suite with good coverage
 - [ ] Production deployment (pending)
 - [ ] Cold start latency documented (pending)
