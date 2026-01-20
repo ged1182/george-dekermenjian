@@ -76,10 +76,14 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
   const chatHelpers = useChat({
     transport,
     id: "glass-box-chat",
-    onData: (data: unknown[]) => {
-      // Parse and add Brain Log entries from the stream
-      if (isEnabled && data.length > 0) {
-        const entries = parseBrainLogFromData(data);
+    onData: (dataPart: unknown) => {
+      // Parse Brain Log entries from the stream
+      // AI SDK 5 sends individual data parts, not arrays
+      console.log("[BrainLog] onData received:", dataPart);
+      if (isEnabled && dataPart) {
+        // Try to parse as a single entry or wrapped entry
+        const entries = parseBrainLogFromData([dataPart]);
+        console.log("[BrainLog] Parsed entries:", entries);
         if (entries.length > 0) {
           addEntries(entries);
         }
