@@ -17,6 +17,13 @@ from .tools.codebase import (
     get_file_content,
     find_references,
 )
+from .tools.architecture import (
+    get_module_structure,
+    get_dependency_graph,
+    get_api_contracts,
+    explain_architecture,
+    trace_data_flow,
+)
 
 SYSTEM_PROMPT = """
 You are an AI assistant embedded in George's portfolio website.
@@ -62,6 +69,11 @@ The portfolio is built with:
 - Use `find_symbol` to locate function/class definitions in the codebase
 - Use `get_file_content` to read and explain code files
 - Use `find_references` to understand how components are connected
+- Use `get_module_structure` for questions about codebase organization
+- Use `get_dependency_graph` for import relationships and circular dependencies
+- Use `get_api_contracts` for data schemas and API endpoints
+- Use `explain_architecture` for high-level system overview
+- Use `trace_data_flow` to understand how data moves through the system
 
 Be concise but thorough. Provide specific details when available.
 """
@@ -81,6 +93,11 @@ def create_agent() -> Agent:
             find_symbol,
             get_file_content,
             find_references,
+            get_module_structure,
+            get_dependency_graph,
+            get_api_contracts,
+            explain_architecture,
+            trace_data_flow,
         ],
     )
 

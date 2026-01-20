@@ -66,6 +66,7 @@ export const Reasoning = memo(
     const [startTime, setStartTime] = useState<number | null>(null);
 
     // Track duration when streaming starts and ends
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
       if (isStreaming) {
         if (startTime === null) {

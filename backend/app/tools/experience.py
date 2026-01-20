@@ -12,10 +12,13 @@ class Experience(BaseModel):
 
     company: str
     title: str
+    role: str | None = None
     period: str
+    location: str = "San Jose, CA"
     description: str
     highlights: list[str]
     technologies: list[str]
+    logo: str | None = None
 
 
 class Skill(BaseModel):
@@ -34,6 +37,40 @@ class Project(BaseModel):
     technologies: list[str]
     highlights: list[str]
     url: str | None = None
+    github: str | None = None
+
+
+class Education(BaseModel):
+    """An education entry."""
+
+    institution: str
+    degree: str
+    field: str
+    period: str
+    location: str
+    highlights: list[str] | None = None
+
+
+class ProfileInfo(BaseModel):
+    """Profile metadata."""
+
+    name: str
+    title: str
+    location: str
+    email: str
+    github: str
+    linkedin: str
+    summary: str
+
+
+class ProfileData(BaseModel):
+    """Complete profile data for the /profile endpoint."""
+
+    profile: ProfileInfo
+    experiences: list[Experience]
+    skills: list["Skill"]
+    projects: list[Project]
+    education: list[Education]
 
 
 class ProfessionalExperience(BaseModel):
@@ -57,12 +94,26 @@ class ProjectsResponse(BaseModel):
     summary: str
 
 
+# Profile metadata
+PROFILE = ProfileInfo(
+    name="George Dekermenjian",
+    title="Staff Software Engineer",
+    location="San Jose, CA",
+    email="george@dekermenjian.com",
+    github="https://github.com/ged1182",
+    linkedin="https://linkedin.com/in/george-dekermenjian",
+    summary="Staff Software Engineer specializing in production-grade agentic AI systems, "
+    "document intelligence, and transparent ML infrastructure. Passionate about building "
+    "explainable AI that users can trust.",
+)
+
 # Professional experience data
 EXPERIENCES: list[Experience] = [
     Experience(
         company="Landing AI",
         title="Staff Software Engineer",
         period="2022 - Present",
+        location="San Jose, CA",
         description="Leading development of agentic AI systems and production ML infrastructure.",
         highlights=[
             "Architected and built document intelligence platform processing millions of documents",
@@ -84,6 +135,7 @@ EXPERIENCES: list[Experience] = [
         company="Previous Company",
         title="Senior Software Engineer",
         period="2019 - 2022",
+        location="San Francisco, CA",
         description="Full-stack development with focus on data-intensive applications.",
         highlights=[
             "Built real-time data processing pipelines handling 100K+ events/second",
