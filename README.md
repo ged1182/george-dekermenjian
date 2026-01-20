@@ -1,6 +1,6 @@
 # Glass Box Portfolio
 
-[![CI](https://github.com/george-dekermenjian/george-dekermenjian/actions/workflows/ci.yml/badge.svg)](https://github.com/george-dekermenjian/george-dekermenjian/actions/workflows/ci.yml)
+[![CI](https://github.com/ged1182/george-dekermenjian/actions/workflows/ci.yml/badge.svg)](https://github.com/ged1182/george-dekermenjian/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A production-grade demonstration of explainable, agentic AI systems. This portfolio showcases transparent AI decision-making through a unique "Glass Box" mode that reveals agent reasoning, tool selection, and execution in real-time.
@@ -32,7 +32,7 @@ Most AI systems are black boxes - they present polished outputs without exposing
 | Layer | Technology |
 |-------|------------|
 | **Frontend** | Next.js 16, React 19, Tailwind CSS v4, Vercel AI SDK |
-| **Backend** | FastAPI, pydantic-ai, Python 3.14+ |
+| **Backend** | FastAPI, pydantic-ai, Python 3.13+ |
 | **LLM** | Google Gemini 2.0 Flash |
 | **Deployment** | Vercel (frontend), Cloud Run (backend) |
 | **Testing** | pytest (backend), Vitest (frontend) |
@@ -42,13 +42,13 @@ Most AI systems are black boxes - they present polished outputs without exposing
 ### Prerequisites
 
 - Node.js 20+ and pnpm
-- Python 3.14+ and [uv](https://docs.astral.sh/uv/)
+- Python 3.13+ and [uv](https://docs.astral.sh/uv/)
 - Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/george-dekermenjian/george-dekermenjian.git
+git clone https://github.com/ged1182/george-dekermenjian.git
 cd george-dekermenjian
 ```
 
@@ -216,11 +216,12 @@ george-dekermenjian/
 
 ## Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+This is a personal portfolio project, so we kindly do not accept pull requests. However, you're welcome to:
 
-- Setting up your development environment
-- Code standards and testing requirements
-- Pull request process
+- **Fork the repository** and create your own version
+- **Open issues** to report bugs or ask questions
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details on creating your own version.
 
 ## Security
 

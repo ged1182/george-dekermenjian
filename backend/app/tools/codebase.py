@@ -4,7 +4,6 @@ These tools enable the agent to answer technical questions about the codebase
 by structurally understanding the code through file analysis and symbol search.
 """
 
-import os
 import re
 from pathlib import Path
 

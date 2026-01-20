@@ -6,6 +6,68 @@
  */
 
 // ============================================================================
+// Profile Types (for /profile page)
+// ============================================================================
+
+export interface Experience {
+  company: string;
+  title: string;
+  role?: string;
+  period: string;
+  location: string;
+  description: string;
+  highlights: string[];
+  technologies: string[];
+  logo?: string;
+}
+
+export interface Skill {
+  category: string;
+  proficiency: 'expert' | 'proficient' | 'familiar';
+  skills: string[];
+}
+
+export interface Project {
+  name: string;
+  description: string;
+  highlights: string[];
+  technologies: string[];
+  url?: string;
+  github?: string;
+}
+
+export interface Education {
+  institution: string;
+  degree: string;
+  field: string;
+  period: string;
+  location: string;
+  highlights?: string[];
+}
+
+export interface FamilyPhoto {
+  src: string;
+  alt: string;
+  caption?: string;
+}
+
+export interface ProfileData {
+  profile: {
+    name: string;
+    title: string;
+    location: string;
+    email: string;
+    github: string;
+    linkedin: string;
+    summary: string;
+  };
+  experiences: Experience[];
+  skills: Skill[];
+  projects: Project[];
+  education: Education[];
+}
+
+// ============================================================================
 // Brain Log Types
 // ============================================================================
 
@@ -153,4 +215,19 @@ export function getTypeColorClass(type: LogEntryType): string {
     performance: 'bg-slate-500/10 text-slate-600 dark:text-slate-400',
   };
   return colors[type];
+}
+
+// ============================================================================
+// Profile API
+// ============================================================================
+
+/**
+ * Fetches profile data from the backend
+ */
+export async function fetchProfile(): Promise<ProfileData> {
+  const response = await fetch(`${API_BASE_URL}/profile`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch profile: ${response.statusText}`);
+  }
+  return response.json();
 }
