@@ -53,7 +53,9 @@ class InputLogEntry(BrainLogEntry):
         return cls(
             title="User message received",
             details={
-                "message_preview": message[:100] + "..." if len(message) > 100 else message,
+                "message_preview": message[:100] + "..."
+                if len(message) > 100
+                else message,
                 "length": message_length,
             },
         )
@@ -78,7 +80,9 @@ class RoutingLogEntry(BrainLogEntry):
         if alternatives:
             details["alternatives_considered"] = alternatives
         return cls(
-            title=f"Selected tool: {selected_tool}" if selected_tool else "Direct response (no tool)",
+            title=f"Selected tool: {selected_tool}"
+            if selected_tool
+            else "Direct response (no tool)",
             details=details,
         )
 

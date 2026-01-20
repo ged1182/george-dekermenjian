@@ -258,7 +258,9 @@ async def go_to_definition(
             def_line = loc.range.start.line + 1  # Convert to 1-indexed
 
             # Get preview
-            loc_full_path = root / rel_path if not Path(rel_path).is_absolute() else Path(rel_path)
+            loc_full_path = (
+                root / rel_path if not Path(rel_path).is_absolute() else Path(rel_path)
+            )
             preview = _get_line_content(loc_full_path, loc.range.start.line)
 
             definitions.append(
@@ -363,7 +365,9 @@ async def find_all_references(
             ref_line = loc.range.start.line + 1
 
             # Get context
-            loc_full_path = root / rel_path if not Path(rel_path).is_absolute() else Path(rel_path)
+            loc_full_path = (
+                root / rel_path if not Path(rel_path).is_absolute() else Path(rel_path)
+            )
             context = _get_line_content(loc_full_path, loc.range.start.line)
 
             references.append(
@@ -670,6 +674,7 @@ async def get_callers(
 
 # Synchronous wrappers for pydantic-ai tools
 # pydantic-ai handles async tools, but we provide sync wrappers for flexibility
+
 
 def go_to_definition_sync(
     file_path: str,

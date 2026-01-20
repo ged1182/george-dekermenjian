@@ -188,7 +188,9 @@ class LSPClient:
             if init_result:
                 self._initialized = True
                 await self._initialized_notification()
-                logger.info(f"LSP server {self.server_type.value} initialized successfully")
+                logger.info(
+                    f"LSP server {self.server_type.value} initialized successfully"
+                )
                 return True
             return False
 
@@ -300,7 +302,10 @@ class LSPClient:
                 },
             },
             "workspaceFolders": [
-                {"uri": f"file://{self.workspace_root}", "name": Path(self.workspace_root).name}
+                {
+                    "uri": f"file://{self.workspace_root}",
+                    "name": Path(self.workspace_root).name,
+                }
             ],
         }
         return await self._send_request("initialize", params)
@@ -332,7 +337,9 @@ class LSPClient:
             {"textDocument": {"uri": uri}},
         )
 
-    async def go_to_definition(self, file_path: str, line: int, character: int) -> list[Location]:
+    async def go_to_definition(
+        self, file_path: str, line: int, character: int
+    ) -> list[Location]:
         """Find the definition of a symbol at the given position.
 
         Args:
@@ -378,7 +385,11 @@ class LSPClient:
             return []
 
     async def find_references(
-        self, file_path: str, line: int, character: int, include_declaration: bool = True
+        self,
+        file_path: str,
+        line: int,
+        character: int,
+        include_declaration: bool = True,
     ) -> list[Location]:
         """Find all references to a symbol at the given position.
 
@@ -420,7 +431,9 @@ class LSPClient:
             logger.error(f"Error in find_references: {e}")
             return []
 
-    async def hover(self, file_path: str, line: int, character: int) -> HoverResult | None:
+    async def hover(
+        self, file_path: str, line: int, character: int
+    ) -> HoverResult | None:
         """Get hover information at the given position.
 
         Args:
@@ -460,7 +473,8 @@ class LSPClient:
                 text = contents.get("value", str(contents))
             elif isinstance(contents, list):
                 text = "\n".join(
-                    c.get("value", str(c)) if isinstance(c, dict) else str(c) for c in contents
+                    c.get("value", str(c)) if isinstance(c, dict) else str(c)
+                    for c in contents
                 )
             else:
                 text = str(contents)
@@ -631,7 +645,9 @@ class LSPClient:
             logger.error(f"Error in prepare_call_hierarchy: {e}")
             return []
 
-    async def incoming_calls(self, item: CallHierarchyItem) -> list[CallHierarchyIncomingCall]:
+    async def incoming_calls(
+        self, item: CallHierarchyItem
+    ) -> list[CallHierarchyIncomingCall]:
         """Get incoming calls to a call hierarchy item.
 
         Args:
@@ -670,7 +686,11 @@ class LSPClient:
                     )
                     for r in call.get("fromRanges", [])
                 ]
-                calls.append(CallHierarchyIncomingCall(from_item=from_item, from_ranges=from_ranges))
+                calls.append(
+                    CallHierarchyIncomingCall(
+                        from_item=from_item, from_ranges=from_ranges
+                    )
+                )
             return calls
 
         except Exception as e:

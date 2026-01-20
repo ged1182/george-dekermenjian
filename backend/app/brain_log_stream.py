@@ -84,7 +84,9 @@ class BrainLogEventStream(VercelAIEventStream):
         async for chunk in super().before_response():
             yield chunk
 
-    async def handle_text_start(self, part: TextPart, follows_text: bool = False) -> AsyncIterator[BaseChunk]:
+    async def handle_text_start(
+        self, part: TextPart, follows_text: bool = False
+    ) -> AsyncIterator[BaseChunk]:
         """Handle text start and record first token time."""
         # Record first token time for TTFT calculation
         if not self._first_text_emitted and self._collector:
@@ -98,7 +100,9 @@ class BrainLogEventStream(VercelAIEventStream):
         async for chunk in super().handle_text_start(part, follows_text):
             yield chunk
 
-    async def handle_tool_call_start(self, part: ToolCallPart) -> AsyncIterator[BaseChunk]:
+    async def handle_tool_call_start(
+        self, part: ToolCallPart
+    ) -> AsyncIterator[BaseChunk]:
         """Handle tool call start and emit Brain Log entry."""
         import time
 
@@ -120,7 +124,9 @@ class BrainLogEventStream(VercelAIEventStream):
         async for chunk in super().handle_tool_call_start(part):
             yield chunk
 
-    async def handle_tool_call_end(self, part: ToolCallPart) -> AsyncIterator[BaseChunk]:
+    async def handle_tool_call_end(
+        self, part: ToolCallPart
+    ) -> AsyncIterator[BaseChunk]:
         """Handle tool call end."""
         # Emit standard tool call end
         async for chunk in super().handle_tool_call_end(part):
@@ -142,10 +148,12 @@ class BrainLogEventStream(VercelAIEventStream):
             duration_ms = (time.time() - start_time) * 1000
 
         # Determine status and result preview
-        if hasattr(event.result, 'content'):
+        if hasattr(event.result, "content"):
             # Get a preview of the result
             result_str = str(event.result.content)
-            result_preview = result_str[:200] + "..." if len(result_str) > 200 else result_str
+            result_preview = (
+                result_str[:200] + "..." if len(result_str) > 200 else result_str
+            )
             status = LogEntryStatus.SUCCESS
             error = None
         else:
@@ -156,7 +164,7 @@ class BrainLogEventStream(VercelAIEventStream):
         # Add tool call complete entry
         if self._collector:
             # Get tool name from the event
-            tool_name = getattr(event.result, 'tool_name', 'unknown')
+            tool_name = getattr(event.result, "tool_name", "unknown")
             self._collector.add_tool_call_complete(
                 tool_name=tool_name,
                 arguments={},  # Arguments were already logged in tool_call_start

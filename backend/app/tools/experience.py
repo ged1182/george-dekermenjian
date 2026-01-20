@@ -70,7 +70,15 @@ EXPERIENCES: list[Experience] = [
             "Led adoption of pydantic-ai for structured agent development",
             "Built real-time streaming inference pipelines with sub-second latency",
         ],
-        technologies=["Python", "FastAPI", "pydantic-ai", "GCP", "Cloud Run", "Document AI", "PostgreSQL"],
+        technologies=[
+            "Python",
+            "FastAPI",
+            "pydantic-ai",
+            "GCP",
+            "Cloud Run",
+            "Document AI",
+            "PostgreSQL",
+        ],
     ),
     Experience(
         company="Previous Company",
@@ -82,19 +90,42 @@ EXPERIENCES: list[Experience] = [
             "Led migration from monolith to microservices architecture",
             "Mentored team of 5 engineers on best practices and code quality",
         ],
-        technologies=["Python", "TypeScript", "React", "PostgreSQL", "Redis", "Kubernetes"],
+        technologies=[
+            "Python",
+            "TypeScript",
+            "React",
+            "PostgreSQL",
+            "Redis",
+            "Kubernetes",
+        ],
     ),
 ]
 
 SKILLS: list[Skill] = [
     Skill(
         category="AI/ML Engineering",
-        skills=["pydantic-ai", "LangChain", "Gemini", "Claude", "OpenAI", "RAG Systems", "Agent Architectures"],
+        skills=[
+            "pydantic-ai",
+            "LangChain",
+            "Gemini",
+            "Claude",
+            "OpenAI",
+            "RAG Systems",
+            "Agent Architectures",
+        ],
         proficiency="expert",
     ),
     Skill(
         category="Backend Development",
-        skills=["Python", "FastAPI", "Django", "PostgreSQL", "Redis", "gRPC", "REST APIs"],
+        skills=[
+            "Python",
+            "FastAPI",
+            "Django",
+            "PostgreSQL",
+            "Redis",
+            "gRPC",
+            "REST APIs",
+        ],
         proficiency="expert",
     ),
     Skill(
@@ -104,12 +135,26 @@ SKILLS: list[Skill] = [
     ),
     Skill(
         category="Cloud & Infrastructure",
-        skills=["GCP", "Cloud Run", "Cloud SQL", "Pub/Sub", "Docker", "Kubernetes", "Terraform"],
+        skills=[
+            "GCP",
+            "Cloud Run",
+            "Cloud SQL",
+            "Pub/Sub",
+            "Docker",
+            "Kubernetes",
+            "Terraform",
+        ],
         proficiency="expert",
     ),
     Skill(
         category="Data Engineering",
-        skills=["Apache Beam", "BigQuery", "Data Pipelines", "ETL", "Stream Processing"],
+        skills=[
+            "Apache Beam",
+            "BigQuery",
+            "Data Pipelines",
+            "ETL",
+            "Stream Processing",
+        ],
         proficiency="proficient",
     ),
 ]
@@ -118,7 +163,14 @@ PROJECTS: list[Project] = [
     Project(
         name="Glass Box Portfolio",
         description="Production-grade demonstration of explainable, agentic systems with transparent visibility into AI decision-making.",
-        technologies=["Next.js", "FastAPI", "pydantic-ai", "Gemini", "Vercel", "Cloud Run"],
+        technologies=[
+            "Next.js",
+            "FastAPI",
+            "pydantic-ai",
+            "Gemini",
+            "Vercel",
+            "Cloud Run",
+        ],
         highlights=[
             "Toggle between polished UX and transparent engineering view",
             "Real-time Brain Log showing agent reasoning and tool execution",

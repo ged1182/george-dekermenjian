@@ -77,7 +77,17 @@ def _get_language(file_path: str) -> str:
 
 def _should_skip_path(path: Path) -> bool:
     """Check if a path should be skipped during search."""
-    skip_dirs = {".git", ".venv", "venv", "node_modules", "__pycache__", ".next", "dist", "build", ".uv"}
+    skip_dirs = {
+        ".git",
+        ".venv",
+        "venv",
+        "node_modules",
+        "__pycache__",
+        ".next",
+        "dist",
+        "build",
+        ".uv",
+    }
     parts = path.parts
     return any(skip_dir in parts for skip_dir in skip_dirs)
 
@@ -225,8 +235,7 @@ def get_file_content(
 
         # Format with line numbers
         numbered_lines = [
-            f"{i + start_idx + 1:4d}: {line}"
-            for i, line in enumerate(selected_lines)
+            f"{i + start_idx + 1:4d}: {line}" for i, line in enumerate(selected_lines)
         ]
 
         return FileContent(
@@ -268,7 +277,18 @@ def find_references(symbol_name: str) -> FindReferencesResult:
     # Pattern to find symbol usage (word boundary match)
     pattern = re.compile(rf"\b{re.escape(symbol_name)}\b")
 
-    extensions = {".py", ".ts", ".tsx", ".js", ".jsx", ".json", ".md", ".yaml", ".yml", ".toml"}
+    extensions = {
+        ".py",
+        ".ts",
+        ".tsx",
+        ".js",
+        ".jsx",
+        ".json",
+        ".md",
+        ".yaml",
+        ".yml",
+        ".toml",
+    }
 
     for file_path in root.rglob("*"):
         if not file_path.is_file():

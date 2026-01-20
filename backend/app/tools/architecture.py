@@ -32,7 +32,9 @@ class ModuleStructureResult(BaseModel):
     root_path: str = Field(description="Root path analyzed")
     modules: list[ModuleInfo] = Field(description="Modules found in the codebase")
     architecture_type: str = Field(description="Detected architecture pattern")
-    layers: dict[str, list[str]] = Field(description="Architectural layers and their modules")
+    layers: dict[str, list[str]] = Field(
+        description="Architectural layers and their modules"
+    )
 
 
 class DependencyEdge(BaseModel):
@@ -50,7 +52,9 @@ class DependencyGraphResult(BaseModel):
     edges: list[DependencyEdge] = Field(description="Import relationships")
     entry_points: list[str] = Field(description="Files with no incoming edges")
     leaf_nodes: list[str] = Field(description="Files with no outgoing edges")
-    circular_dependencies: list[list[str]] = Field(description="Detected circular dependencies")
+    circular_dependencies: list[list[str]] = Field(
+        description="Detected circular dependencies"
+    )
 
 
 class DataFlowStep(BaseModel):
@@ -102,7 +106,9 @@ class ArchitectureOverview(BaseModel):
     """High-level architecture overview."""
 
     summary: str = Field(description="Brief architecture summary")
-    tech_stack: dict[str, list[str]] = Field(description="Technologies used by category")
+    tech_stack: dict[str, list[str]] = Field(
+        description="Technologies used by category"
+    )
     architecture_pattern: str = Field(description="Main architectural pattern")
     key_components: list[dict] = Field(description="Key components and their roles")
     data_stores: list[str] = Field(description="Data storage mechanisms")
@@ -140,8 +146,17 @@ PURPOSE_PATTERNS = {
 def _should_skip_path(path: Path) -> bool:
     """Check if a path should be skipped during analysis."""
     skip_dirs = {
-        ".git", ".venv", "venv", "node_modules", "__pycache__",
-        ".next", "dist", "build", ".uv", ".pytest_cache", "coverage",
+        ".git",
+        ".venv",
+        "venv",
+        "node_modules",
+        "__pycache__",
+        ".next",
+        "dist",
+        "build",
+        ".uv",
+        ".pytest_cache",
+        "coverage",
     }
     parts = path.parts
     return any(skip_dir in parts for skip_dir in skip_dirs)
@@ -244,7 +259,9 @@ def _extract_python_imports(file_path: Path, root: Path) -> list[tuple[str, str,
     return imports
 
 
-def _extract_typescript_imports(file_path: Path, root: Path) -> list[tuple[str, str, str]]:
+def _extract_typescript_imports(
+    file_path: Path, root: Path
+) -> list[tuple[str, str, str]]:
     """Extract imports from a TypeScript/JavaScript file.
 
     Returns list of (source_file, target_path, import_type)
@@ -299,9 +316,15 @@ def _extract_pydantic_schemas(file_path: Path, root: Path) -> list[SchemaInfo]:
                 if any(b in ["BaseModel", "BaseSettings"] for b in base_names):
                     fields = []
                     for item in node.body:
-                        if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+                        if isinstance(item, ast.AnnAssign) and isinstance(
+                            item.target, ast.Name
+                        ):
                             field_name = item.target.id
-                            type_str = ast.unparse(item.annotation) if item.annotation else "Any"
+                            type_str = (
+                                ast.unparse(item.annotation)
+                                if item.annotation
+                                else "Any"
+                            )
                             fields.append(
                                 SchemaField(
                                     name=field_name,
@@ -333,7 +356,9 @@ def _extract_typescript_interfaces(file_path: Path, root: Path) -> list[SchemaIn
         relative_path = str(file_path.relative_to(root))
 
         # Match interface definitions
-        interface_pattern = r"(?:export\s+)?interface\s+(\w+)(?:\s+extends\s+([^{]+))?\s*\{([^}]+)\}"
+        interface_pattern = (
+            r"(?:export\s+)?interface\s+(\w+)(?:\s+extends\s+([^{]+))?\s*\{([^}]+)\}"
+        )
 
         for match in re.finditer(interface_pattern, content, re.MULTILINE | re.DOTALL):
             name = match.group(1)
@@ -359,7 +384,7 @@ def _extract_typescript_interfaces(file_path: Path, root: Path) -> list[SchemaIn
                     )
                 )
 
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
             schemas.append(
                 SchemaInfo(
                     name=name,
@@ -418,7 +443,13 @@ def get_module_structure() -> ModuleStructureResult:
             files.append(rel_path)
 
             # Identify main files
-            if file_path.name in ["index.ts", "index.tsx", "index.js", "__init__.py", "main.py"]:
+            if file_path.name in [
+                "index.ts",
+                "index.tsx",
+                "index.js",
+                "__init__.py",
+                "main.py",
+            ]:
                 main_files.append(rel_path)
 
             # Get exports
@@ -453,8 +484,12 @@ def get_module_structure() -> ModuleStructureResult:
             layers["Core"].append(dir_name)
 
     # Detect architecture pattern
-    has_frontend = any("web" in m.path.lower() or "app" in m.path.lower() for m in modules)
-    has_backend = any("backend" in m.path.lower() or "api" in m.path.lower() for m in modules)
+    has_frontend = any(
+        "web" in m.path.lower() or "app" in m.path.lower() for m in modules
+    )
+    has_backend = any(
+        "backend" in m.path.lower() or "api" in m.path.lower() for m in modules
+    )
 
     if has_frontend and has_backend:
         arch_type = "Full-stack monorepo (Frontend + Backend)"
@@ -610,13 +645,15 @@ def get_api_contracts() -> APIContractsResult:
                 for match in re.finditer(endpoint_pattern, content):
                     method = match.group(1).upper()
                     path = match.group(2)
-                    line_num = content[:match.start()].count("\n") + 1
-                    endpoints.append({
-                        "method": method,
-                        "path": path,
-                        "file": str(file_path.relative_to(root)),
-                        "line": line_num,
-                    })
+                    line_num = content[: match.start()].count("\n") + 1
+                    endpoints.append(
+                        {
+                            "method": method,
+                            "path": path,
+                            "file": str(file_path.relative_to(root)),
+                            "line": line_num,
+                        }
+                    )
             except Exception:
                 pass
 
@@ -718,54 +755,66 @@ def explain_architecture() -> ArchitectureOverview:
     # Check for agent
     agent_file = root / "backend" / "app" / "agent.py"
     if agent_file.exists():
-        key_components.append({
-            "name": "AI Agent",
-            "file": "backend/app/agent.py",
-            "role": "pydantic-ai agent with registered tools for handling queries",
-        })
+        key_components.append(
+            {
+                "name": "AI Agent",
+                "file": "backend/app/agent.py",
+                "role": "pydantic-ai agent with registered tools for handling queries",
+            }
+        )
 
     # Check for main API
     main_file = root / "backend" / "app" / "main.py"
     if main_file.exists():
-        key_components.append({
-            "name": "API Server",
-            "file": "backend/app/main.py",
-            "role": "FastAPI application with streaming chat endpoint",
-        })
+        key_components.append(
+            {
+                "name": "API Server",
+                "file": "backend/app/main.py",
+                "role": "FastAPI application with streaming chat endpoint",
+            }
+        )
 
     # Check for frontend components
     chat_interface = root / "web" / "components" / "chat" / "ChatInterface.tsx"
     if chat_interface.exists():
-        key_components.append({
-            "name": "Chat Interface",
-            "file": "web/components/chat/ChatInterface.tsx",
-            "role": "React component for agentic chat using Vercel AI SDK",
-        })
+        key_components.append(
+            {
+                "name": "Chat Interface",
+                "file": "web/components/chat/ChatInterface.tsx",
+                "role": "React component for agentic chat using Vercel AI SDK",
+            }
+        )
 
     glass_box = root / "web" / "components" / "glass-box"
     if glass_box.exists():
-        key_components.append({
-            "name": "Glass Box System",
-            "file": "web/components/glass-box/",
-            "role": "Transparency layer showing agent reasoning and tool calls",
-        })
+        key_components.append(
+            {
+                "name": "Glass Box System",
+                "file": "web/components/glass-box/",
+                "role": "Transparency layer showing agent reasoning and tool calls",
+            }
+        )
 
     # Identify entry points
     entry_points = []
 
     if (root / "web" / "app" / "page.tsx").exists():
-        entry_points.append({
-            "type": "frontend",
-            "file": "web/app/page.tsx",
-            "description": "Next.js app router main page",
-        })
+        entry_points.append(
+            {
+                "type": "frontend",
+                "file": "web/app/page.tsx",
+                "description": "Next.js app router main page",
+            }
+        )
 
     if main_file.exists():
-        entry_points.append({
-            "type": "backend",
-            "file": "backend/app/main.py",
-            "description": "FastAPI application entry point",
-        })
+        entry_points.append(
+            {
+                "type": "backend",
+                "file": "backend/app/main.py",
+                "description": "FastAPI application entry point",
+            }
+        )
 
     # Determine architecture pattern
     has_agent = agent_file.exists()
