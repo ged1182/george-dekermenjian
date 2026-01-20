@@ -89,9 +89,15 @@ export interface BrainLogEntry {
 // API Configuration
 // ============================================================================
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+// For local development, use the backend directly
+// For production (Vercel), use the proxy API route to handle Cloud Run auth
+const isProduction = process.env.NODE_ENV === 'production';
+const LOCAL_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
 
-export const CHAT_ENDPOINT = `${API_BASE_URL}/chat`;
+export const API_BASE_URL = isProduction ? '' : LOCAL_BACKEND_URL;
+
+// Chat endpoint: use /api/chat proxy in production, direct backend in development
+export const CHAT_ENDPOINT = isProduction ? '/api/chat' : `${LOCAL_BACKEND_URL}/chat`;
 
 // ============================================================================
 // Type Guards
