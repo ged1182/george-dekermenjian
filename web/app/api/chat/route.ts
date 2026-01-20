@@ -23,28 +23,48 @@ function getGoogleAuth(): GoogleAuth {
   }
 
   // Parse the JSON credentials from the environment variable
-  const parsedCredentials = JSON.parse(credentials);
+  let parsedCredentials;
+  try {
+    parsedCredentials = JSON.parse(credentials);
+  } catch (e) {
+    throw new Error(
+      `Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY as JSON: ${e instanceof Error ? e.message : "unknown error"}`
+    );
+  }
+
+  if (!parsedCredentials.client_email || !parsedCredentials.private_key) {
+    throw new Error(
+      "GOOGLE_SERVICE_ACCOUNT_KEY is missing required fields (client_email or private_key)"
+    );
+  }
 
   return new GoogleAuth({
     credentials: parsedCredentials,
-    // The target audience is the Cloud Run service URL
-    // This is required for ID token generation
   });
 }
 
 async function getIdToken(targetAudience: string): Promise<string> {
-  const auth = getGoogleAuth();
-  const client = await auth.getIdTokenClient(targetAudience);
-  const requestHeaders = await client.getRequestHeaders();
-  // getRequestHeaders returns { Authorization: string } but TypeScript types it as Headers
-  const headersObj = requestHeaders as unknown as Record<string, string>;
-  const authHeader = headersObj["Authorization"] || headersObj["authorization"];
+  try {
+    const auth = getGoogleAuth();
+    const client = await auth.getIdTokenClient(targetAudience);
+    const requestHeaders = await client.getRequestHeaders();
+    // getRequestHeaders returns { Authorization: string } but TypeScript types it as Headers
+    const headersObj = requestHeaders as unknown as Record<string, string>;
+    const authHeader =
+      headersObj["Authorization"] || headersObj["authorization"];
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new Error("Failed to get ID token");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new Error(
+        "Authorization header missing or invalid in response from Google Auth"
+      );
+    }
+
+    return authHeader.substring(7); // Remove "Bearer " prefix
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("getIdToken error:", message);
+    throw new Error(`Failed to get ID token: ${message}`);
   }
-
-  return authHeader.substring(7); // Remove "Bearer " prefix
 }
 
 export async function POST(request: NextRequest) {
