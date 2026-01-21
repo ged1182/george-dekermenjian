@@ -119,7 +119,9 @@ class ThinkingLogEntry(BrainLogEntry):
         thinking_text: str,
     ) -> "ThinkingLogEntry":
         """Create a thinking log entry."""
-        preview = thinking_text[:200] + "..." if len(thinking_text) > 200 else thinking_text
+        preview = (
+            thinking_text[:200] + "..." if len(thinking_text) > 200 else thinking_text
+        )
         return cls(
             title="Model reasoning",
             details={

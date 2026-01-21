@@ -13,7 +13,7 @@ def test_settings_defaults():
         assert settings.app_name == "Glass Box Portfolio"
         assert settings.app_version == "0.1.0"
         assert settings.debug is False
-        assert settings.model_name == "google-gla:gemini-2.0-flash"
+        assert settings.model_name == "google-gla:gemini-3-flash-preview"
         assert settings.max_file_lines == 500
 
 

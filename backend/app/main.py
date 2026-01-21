@@ -156,7 +156,7 @@ def _format_data_chunk(data: dict[str, Any]) -> str:
 class _CachedBodyRequest(Request):
     """Request wrapper that caches and replays the body."""
 
-    def __init__(self, scope: dict, body: bytes):
+    def __init__(self, scope: dict[str, Any], body: bytes):
         super().__init__(scope)
         self._cached_body = body
 
@@ -187,7 +187,7 @@ async def chat(request: Request) -> Response:
     set_brain_log_collector(collector)
 
     # Create a new request with the cached body for VercelAIAdapter
-    cached_request = _CachedBodyRequest(request.scope, body_bytes)
+    cached_request = _CachedBodyRequest(dict(request.scope), body_bytes)
 
     # Get the streaming response from VercelAIAdapter
     adapter_response = await VercelAIAdapter.dispatch_request(

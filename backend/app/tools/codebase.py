@@ -20,7 +20,9 @@ class CloneCodebaseResult(BaseModel):
     status: str = Field(description="'cloned', 'already_exists', or 'error'")
     path: str = Field(description="Path where the codebase is located")
     message: str = Field(description="Human-readable status message")
-    commit_hash: str | None = Field(default=None, description="Current commit hash if available")
+    commit_hash: str | None = Field(
+        default=None, description="Current commit hash if available"
+    )
 
 
 def clone_codebase() -> CloneCodebaseResult:
@@ -36,8 +38,7 @@ def clone_codebase() -> CloneCodebaseResult:
     settings = get_settings()
     codebase_path = Path(settings.codebase_root)
     repo_url = os.environ.get(
-        "CODEBASE_REPO_URL",
-        "https://github.com/ged1182/george-dekermenjian.git"
+        "CODEBASE_REPO_URL", "https://github.com/ged1182/george-dekermenjian.git"
     )
     commit_hash = os.environ.get("CODEBASE_COMMIT_HASH", "main")
 
@@ -102,7 +103,9 @@ def clone_codebase() -> CloneCodebaseResult:
                 text=True,
                 timeout=10,
             )
-            current_hash = hash_result.stdout.strip()[:8] if hash_result.returncode == 0 else None
+            current_hash = (
+                hash_result.stdout.strip()[:8] if hash_result.returncode == 0 else None
+            )
         except Exception:
             current_hash = None
 
@@ -547,9 +550,7 @@ def get_folder_tree(
     total_files = 0
     total_dirs = 0
 
-    def build_tree(
-        current_path: Path, prefix: str = "", depth: int = 0
-    ) -> None:
+    def build_tree(current_path: Path, prefix: str = "", depth: int = 0) -> None:
         nonlocal total_files, total_dirs
 
         if depth > max_depth:

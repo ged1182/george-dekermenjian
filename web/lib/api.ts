@@ -191,7 +191,11 @@ export function formatDuration(ms: number | null | undefined): string {
   if (ms >= 1) {
     return `${Math.round(ms)}ms`;
   }
-  // Sub-millisecond: show 2 decimal places
+  // Zero: show as 0ms
+  if (ms === 0) {
+    return '0ms';
+  }
+  // Sub-millisecond (non-zero): show 2 decimal places
   return `${ms.toFixed(2)}ms`;
 }
 

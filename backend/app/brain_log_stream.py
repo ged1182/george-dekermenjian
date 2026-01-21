@@ -81,7 +81,7 @@ class BrainLogEventStream(VercelAIEventStream):
             yield chunk
 
         # Then emit standard step start events
-        async for chunk in super().before_response():
+        async for chunk in super().before_response():  # type: ignore[assignment]
             yield chunk
 
     async def handle_text_start(
@@ -97,10 +97,10 @@ class BrainLogEventStream(VercelAIEventStream):
         for chunk in self._emit_pending_brain_logs():
             yield chunk
 
-        async for chunk in super().handle_text_start(part, follows_text):
+        async for chunk in super().handle_text_start(part, follows_text):  # type: ignore[assignment]
             yield chunk
 
-    async def handle_tool_call_start(
+    async def handle_tool_call_start(  # type: ignore[override]
         self, part: ToolCallPart
     ) -> AsyncIterator[BaseChunk]:
         """Handle tool call start and emit Brain Log entry."""
@@ -121,7 +121,7 @@ class BrainLogEventStream(VercelAIEventStream):
             yield chunk
 
         # Emit standard tool call start
-        async for chunk in super().handle_tool_call_start(part):
+        async for chunk in super().handle_tool_call_start(part):  # type: ignore[arg-type, assignment]
             yield chunk
 
     async def handle_tool_call_end(
@@ -179,7 +179,7 @@ class BrainLogEventStream(VercelAIEventStream):
             yield chunk
 
         # Emit standard tool result
-        async for chunk in super().handle_function_tool_result(event):
+        async for chunk in super().handle_function_tool_result(event):  # type: ignore[assignment]
             yield chunk
 
     async def after_stream(self) -> AsyncIterator[BaseChunk]:
@@ -196,5 +196,5 @@ class BrainLogEventStream(VercelAIEventStream):
             yield chunk
 
         # Then emit standard finish events
-        async for chunk in super().after_stream():
+        async for chunk in super().after_stream():  # type: ignore[assignment]
             yield chunk

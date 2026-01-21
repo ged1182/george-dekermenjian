@@ -14,9 +14,25 @@ from pydantic_ai.models.google import GoogleModelSettings
 
 from .config import get_settings
 from .schemas.brain_log import (
-    BrainLogCollector,
     LogEntryStatus,
     get_brain_log_collector,
+)
+from .tools.codebase import (
+    clone_codebase,
+    get_file_content,
+    get_folder_tree,
+)
+from .tools.experience import (
+    get_professional_experience,
+    get_projects,
+    get_skills,
+)
+from .tools.semantic import (
+    find_all_references,
+    get_callers,
+    get_document_symbols,
+    get_type_info,
+    go_to_definition,
 )
 
 T = TypeVar("T")
@@ -43,6 +59,7 @@ def logged_tool(func: Callable[..., T]) -> Callable[..., T]:
     Emits separate entries for tool invocation and tool result.
     Works with both sync and async functions.
     """
+
     @functools.wraps(func)
     def sync_wrapper(*args: Any, **kwargs: Any) -> T:
         collector = get_brain_log_collector()
@@ -90,7 +107,7 @@ def logged_tool(func: Callable[..., T]) -> Callable[..., T]:
             collector.add_tool_call_pending(tool_name, kwargs or {})
 
         try:
-            result = await func(*args, **kwargs)
+            result = await func(*args, **kwargs)  # type: ignore[misc]
             duration_ms = (time.time() - start_time) * 1000
 
             # Log tool result (separate entry)
@@ -118,23 +135,7 @@ def logged_tool(func: Callable[..., T]) -> Callable[..., T]:
     if inspect.iscoroutinefunction(func):
         return async_wrapper  # type: ignore
     return sync_wrapper  # type: ignore
-from .tools.experience import (
-    get_professional_experience,
-    get_skills,
-    get_projects,
-)
-from .tools.codebase import (
-    clone_codebase,
-    get_file_content,
-    get_folder_tree,
-)
-from .tools.semantic import (
-    go_to_definition,
-    find_all_references,
-    get_type_info,
-    get_document_symbols,
-    get_callers,
-)
+
 
 SYSTEM_PROMPT = """
 You are an AI assistant for the "Glass Box Portfolio" website.

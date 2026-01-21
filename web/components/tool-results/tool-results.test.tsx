@@ -346,10 +346,13 @@ describe("CodebaseResult", () => {
       expect(screen.getByText("2 locations")).toBeInTheDocument();
     });
 
-    it("renders file locations when expanded", () => {
+    it("renders file locations when expanded", async () => {
+      const user = userEvent.setup();
       render(<CodebaseResult toolName="find_symbol" data={findSymbolData} toolCallId="test-1" />);
-      // Auto-expanded for small results
-      expect(screen.getByText("src/hooks/useGlassBox.ts:10")).toBeInTheDocument();
+      // Click to expand and see file locations
+      await user.click(screen.getByRole("button"));
+      // Use regex to handle potential whitespace variations
+      expect(screen.getByText(/src\/hooks\/useGlassBox\.ts:10/)).toBeInTheDocument();
     });
   });
 

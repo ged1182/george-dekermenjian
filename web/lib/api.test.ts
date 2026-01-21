@@ -186,8 +186,16 @@ describe("formatTimestamp", () => {
 // ============================================================================
 
 describe("formatDuration", () => {
-  it("formats milliseconds under 1000", () => {
+  it("formats zero as 0ms", () => {
     expect(formatDuration(0)).toBe("0ms");
+  });
+
+  it("formats sub-millisecond values with 2 decimal places", () => {
+    expect(formatDuration(0.5)).toBe("0.50ms");
+  });
+
+  it("formats milliseconds 1-999 as whole numbers", () => {
+    expect(formatDuration(1)).toBe("1ms");
     expect(formatDuration(100)).toBe("100ms");
     expect(formatDuration(999)).toBe("999ms");
   });
