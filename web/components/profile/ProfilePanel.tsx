@@ -77,6 +77,7 @@ function useHighlightedSections() {
 interface ProfilePanelProps {
   className?: string;
   showCloseButton?: boolean;
+  onClose?: () => void;
 }
 
 function ProfileSummaryCompact({ profile }: { profile: ProfileData["profile"] }) {
@@ -423,8 +424,16 @@ function EducationCompact({
 // Main Component
 // =============================================================================
 
-export function ProfilePanel({ className, showCloseButton }: ProfilePanelProps) {
+export function ProfilePanel({ className, showCloseButton, onClose }: ProfilePanelProps) {
   const { setRightPanelMode } = useGlassBox();
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      setRightPanelMode("none");
+    }
+  };
   const [data, setData] = useState<ProfileData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -456,7 +465,7 @@ export function ProfilePanel({ className, showCloseButton }: ProfilePanelProps) 
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => setRightPanelMode("none")}
+              onClick={handleClose}
               aria-label="Close profile panel"
             >
               <X className="size-4" />
@@ -482,7 +491,7 @@ export function ProfilePanel({ className, showCloseButton }: ProfilePanelProps) 
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => setRightPanelMode("none")}
+              onClick={handleClose}
               aria-label="Close profile panel"
             >
               <X className="size-4" />
@@ -511,7 +520,7 @@ export function ProfilePanel({ className, showCloseButton }: ProfilePanelProps) 
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={() => setRightPanelMode("none")}
+            onClick={handleClose}
             aria-label="Close profile panel"
           >
             <X className="size-4" />

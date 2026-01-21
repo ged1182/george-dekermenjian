@@ -104,16 +104,16 @@ export default function Page() {
 
       {/* Mobile Sheet for panels */}
       <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
-        <SheetContent side="bottom" className="h-[80vh] overflow-hidden" showCloseButton={false}>
+        <SheetContent side="bottom" className="!h-[80vh]" showCloseButton={false}>
           <SheetHeader className="sr-only">
             <SheetTitle>
               {mobileSheetContent === "brainlog" ? "Brain Log" : "Profile"}
             </SheetTitle>
           </SheetHeader>
           {mobileSheetContent === "brainlog" ? (
-            <BrainLog className="h-full overflow-hidden" showCloseButton onClose={() => setMobileSheetOpen(false)} />
+            <BrainLog className="flex-1 min-h-0" showCloseButton onClose={() => setMobileSheetOpen(false)} />
           ) : (
-            <ProfilePanel className="h-full overflow-y-auto" showCloseButton />
+            <ProfilePanel className="flex-1 min-h-0" showCloseButton onClose={() => setMobileSheetOpen(false)} />
           )}
         </SheetContent>
       </Sheet>
