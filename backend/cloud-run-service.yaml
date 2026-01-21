@@ -92,10 +92,6 @@ spec:
             - name: ALLOWED_ORIGINS
               value: "https://glass-box.vercel.app,https://*.vercel.app"
 
-            # Cloud Run sets PORT automatically, but we make it explicit
-            - name: PORT
-              value: "8080"
-
             # Gemini API Key from Secret Manager
             # Create secret: gcloud secrets create gemini-api-key --data-file=- < api_key.txt
             - name: GEMINI_API_KEY
@@ -125,9 +121,9 @@ spec:
               path: /health
               port: 8080
             initialDelaySeconds: 0
-            periodSeconds: 2
+            periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 30  # 60 seconds max startup time
+            failureThreshold: 12  # 120 seconds max startup time
 
           # Liveness probe: Checks if the container is still healthy
           livenessProbe:
