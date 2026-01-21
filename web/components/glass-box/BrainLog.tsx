@@ -8,6 +8,7 @@ import type { ComponentProps } from "react";
 import { memo, useEffect, useRef } from "react";
 import { useGlassBox } from "./GlassBoxProvider";
 import { LogEntry } from "./LogEntry";
+import posthog from "posthog-js";
 
 // ============================================================================
 // BrainLog Panel Component
@@ -69,7 +70,12 @@ export const BrainLog = memo(function BrainLog({
             <Button
               variant="ghost"
               size="icon-xs"
-              onClick={clearEntries}
+              onClick={() => {
+                posthog.capture("brain_log_cleared", {
+                  entries_count: entries.length,
+                });
+                clearEntries();
+              }}
               aria-label="Clear log entries"
             >
               <TrashIcon className="size-3.5" />

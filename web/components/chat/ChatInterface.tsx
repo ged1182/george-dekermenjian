@@ -39,6 +39,9 @@ import {
 // Icons
 import { BotIcon, UserIcon } from "lucide-react";
 
+// PostHog
+import posthog from "posthog-js";
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -72,8 +75,19 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
 
   // Create transport that sends UI Messages format (required by VercelAIAdapter)
+  // Include PostHog distinct_id header for cross-platform correlation
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: CHAT_ENDPOINT }),
+    () =>
+      new DefaultChatTransport({
+        api: CHAT_ENDPOINT,
+        headers: (): Record<string, string> => {
+          const distinctId = posthog.get_distinct_id?.();
+          if (distinctId) {
+            return { "X-PostHog-Distinct-ID": distinctId };
+          }
+          return {};
+        },
+      }),
     []
   );
 
@@ -123,6 +137,12 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
           status: "failure",
         });
       }
+
+      // PostHog: Capture chat error
+      posthog.capture("chat_error_occurred", {
+        error_message: err.message,
+      });
+      posthog.captureException(err);
     },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
@@ -162,6 +182,12 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
         });
       }
 
+      // PostHog: Capture chat message sent
+      posthog.capture("chat_message_sent", {
+        message_length: input.length,
+        message_preview: input.slice(0, 50),
+      });
+
       // Send message using v2 API
       sendMessage({ text: input });
       setInput("");
@@ -188,6 +214,11 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
           status: "success",
         });
       }
+
+      // PostHog: Capture quick start click
+      posthog.capture("quick_start_clicked", {
+        suggestion_text: suggestion,
+      });
 
       sendMessage({ text: suggestion });
     },

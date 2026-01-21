@@ -38,6 +38,7 @@ import {
   type Education,
   type FamilyPhoto,
 } from "@/lib/api";
+import posthog from "posthog-js";
 
 // =============================================================================
 // Family Photos Data (Personal Touch)
@@ -56,6 +57,20 @@ const FAMILY_PHOTOS: FamilyPhoto[] = [
 // =============================================================================
 
 function ProfileHeader({ profile }: { profile?: ProfileData["profile"] }) {
+  const handleResumeDownload = () => {
+    posthog.capture("resume_downloaded", {
+      location: "profile_header",
+    });
+  };
+
+  const handleExternalLinkClick = (linkType: string, url: string) => {
+    posthog.capture("external_link_clicked", {
+      link_type: linkType,
+      url: url,
+      location: "profile_header",
+    });
+  };
+
   return (
     <header className="flex items-center justify-between border-b px-4 py-3">
       <div className="flex items-center gap-3">
@@ -80,6 +95,7 @@ function ProfileHeader({ profile }: { profile?: ProfileData["profile"] }) {
         <a
           href="/George_Dekermenjian_Resume.pdf"
           download
+          onClick={handleResumeDownload}
           className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-colors"
         >
           <Download className="size-4" />
@@ -92,6 +108,7 @@ function ProfileHeader({ profile }: { profile?: ProfileData["profile"] }) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View on GitHub"
+              onClick={() => handleExternalLinkClick("github", profile.github)}
               className="hover:bg-muted hover:text-foreground inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors"
             >
               <Github className="size-4" />
@@ -101,6 +118,7 @@ function ProfileHeader({ profile }: { profile?: ProfileData["profile"] }) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View on LinkedIn"
+              onClick={() => handleExternalLinkClick("linkedin", profile.linkedin)}
               className="hover:bg-muted hover:text-foreground inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors"
             >
               <Linkedin className="size-4" />
@@ -151,6 +169,14 @@ function FamilyGallery() {
   // Derive directly from constant - no state needed
   const hasPhotos = FAMILY_PHOTOS.length > 0;
 
+  const handlePhotoClick = (photo: FamilyPhoto) => {
+    setSelectedPhoto(photo);
+    posthog.capture("family_photo_viewed", {
+      photo_src: photo.src,
+      photo_alt: photo.alt,
+    });
+  };
+
   if (!hasPhotos) {
     return (
       <section>
@@ -198,7 +224,7 @@ function FamilyGallery() {
             <button
               key={photo.src}
               type="button"
-              onClick={() => setSelectedPhoto(photo)}
+              onClick={() => handlePhotoClick(photo)}
               className="group focus:ring-primary relative aspect-square cursor-pointer overflow-hidden rounded-lg focus:ring-2 focus:outline-none"
             >
               <Image
@@ -243,7 +269,8 @@ function FamilyGallery() {
 function ExperienceTimeline({ experiences }: { experiences: Experience[] }) {
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set([0]));
 
-  const toggleItem = (index: number) => {
+  const toggleItem = (index: number, exp: Experience) => {
+    const isExpanding = !expandedItems.has(index);
     setExpandedItems((prev) => {
       const next = new Set(prev);
       if (next.has(index)) {
@@ -253,6 +280,15 @@ function ExperienceTimeline({ experiences }: { experiences: Experience[] }) {
       }
       return next;
     });
+
+    // PostHog: Track experience expansion
+    if (isExpanding) {
+      posthog.capture("experience_expanded", {
+        company: exp.company,
+        title: exp.title,
+        period: exp.period,
+      });
+    }
   };
 
   return (
@@ -271,7 +307,7 @@ function ExperienceTimeline({ experiences }: { experiences: Experience[] }) {
             <Collapsible
               key={index}
               open={expandedItems.has(index)}
-              onOpenChange={() => toggleItem(index)}
+              onOpenChange={() => toggleItem(index, exp)}
             >
               <div className="relative pl-10">
                 {/* Timeline dot */}
@@ -401,6 +437,13 @@ function SkillsVisualization({ skills }: { skills: Skill[] }) {
 }
 
 function ProjectsSection({ projects }: { projects: Project[] }) {
+  const handleProjectLinkClick = (project: Project) => {
+    posthog.capture("project_link_clicked", {
+      project_name: project.name,
+      project_url: project.url,
+    });
+  };
+
   return (
     <section>
       <div className="mb-4 flex items-center gap-2 px-4">
@@ -419,6 +462,7 @@ function ProjectsSection({ projects }: { projects: Project[] }) {
                     href={project.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => handleProjectLinkClick(project)}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <ExternalLink className="size-3.5" />
@@ -566,7 +610,14 @@ export default function ProfilePage() {
       const profileData = await fetchProfile();
       setData(profileData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      setError(errorMessage);
+
+      // PostHog: Capture profile load error
+      posthog.capture("profile_load_error", {
+        error_message: errorMessage,
+      });
+      posthog.captureException(err instanceof Error ? err : new Error(errorMessage));
     } finally {
       setLoading(false);
     }

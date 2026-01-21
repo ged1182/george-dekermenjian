@@ -9,6 +9,7 @@ import { useKeyboardShortcuts } from "@/hooks";
 import { Github, BoxIcon, User, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import posthog from "posthog-js";
 
 export default function Page() {
   const { rightPanelMode, togglePanel, setRightPanelMode, entries } = useGlassBox();
@@ -40,8 +41,8 @@ export default function Page() {
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    onToggleGlassBox: () => togglePanel("brainlog"),
-    onToggleProfile: () => togglePanel("profile"),
+    onToggleGlassBox: () => handleTogglePanel("brainlog"),
+    onToggleProfile: () => handleTogglePanel("profile"),
     onFocusInput: focusInput,
     onEscape: handleEscape,
   });
@@ -50,12 +51,41 @@ export default function Page() {
   const openMobileSheet = (content: "brainlog" | "profile") => {
     setMobileSheetContent(content);
     setMobileSheetOpen(true);
+
+    // PostHog: Capture panel open on mobile
+    posthog.capture(
+      content === "brainlog" ? "brain_log_opened" : "profile_panel_opened",
+      { platform: "mobile" }
+    );
   };
+
+  // Handle toggle panel with PostHog tracking
+  const handleTogglePanel = useCallback(
+    (panel: "brainlog" | "profile") => {
+      const isOpening = rightPanelMode !== panel;
+      togglePanel(panel);
+
+      if (isOpening) {
+        posthog.capture(
+          panel === "brainlog" ? "brain_log_opened" : "profile_panel_opened",
+          { platform: "desktop" }
+        );
+
+        // Also track glass box toggle specifically
+        if (panel === "brainlog") {
+          posthog.capture("glass_box_toggled", { enabled: true });
+        }
+      } else if (panel === "brainlog") {
+        posthog.capture("glass_box_toggled", { enabled: false });
+      }
+    },
+    [rightPanelMode, togglePanel]
+  );
 
   return (
     <div className="flex h-screen flex-col">
       {/* Header */}
-      <Header onMobileToggle={openMobileSheet} />
+      <Header onMobileToggle={openMobileSheet} onDesktopToggle={handleTogglePanel} />
 
       {/* Main Content */}
       <main className="flex flex-1 overflow-hidden">
@@ -127,10 +157,18 @@ export default function Page() {
 
 interface HeaderProps {
   onMobileToggle: (content: "brainlog" | "profile") => void;
+  onDesktopToggle: (panel: "brainlog" | "profile") => void;
 }
 
-function Header({ onMobileToggle }: HeaderProps) {
-  const { rightPanelMode, togglePanel } = useGlassBox();
+function Header({ onMobileToggle, onDesktopToggle }: HeaderProps) {
+  const { rightPanelMode } = useGlassBox();
+
+  // Handle GitHub link click
+  const handleGitHubClick = () => {
+    posthog.capture("github_link_clicked", {
+      location: "header",
+    });
+  };
 
   return (
     <header className="flex items-center justify-between border-b px-4 py-3">
@@ -153,6 +191,7 @@ function Header({ onMobileToggle }: HeaderProps) {
           rel="noopener noreferrer"
           aria-label="View on GitHub"
           className="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium hover:bg-muted hover:text-foreground transition-colors"
+          onClick={handleGitHubClick}
         >
           <Github className="size-4" />
         </a>
@@ -161,7 +200,7 @@ function Header({ onMobileToggle }: HeaderProps) {
         <Button
           variant={rightPanelMode === "profile" ? "default" : "ghost"}
           size="sm"
-          onClick={() => togglePanel("profile")}
+          onClick={() => onDesktopToggle("profile")}
           aria-label="Toggle Profile (P)"
           className="hidden lg:inline-flex gap-1.5"
         >
@@ -176,7 +215,7 @@ function Header({ onMobileToggle }: HeaderProps) {
         <Button
           variant={rightPanelMode === "brainlog" ? "default" : "ghost"}
           size="sm"
-          onClick={() => togglePanel("brainlog")}
+          onClick={() => onDesktopToggle("brainlog")}
           aria-label="Toggle Glass Box (G)"
           className="hidden lg:inline-flex gap-1.5"
         >

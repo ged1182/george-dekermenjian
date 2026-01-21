@@ -23,6 +23,7 @@ from .tools.codebase import (
     get_folder_tree,
 )
 from .tools.experience import (
+    get_education,
     get_professional_experience,
     get_projects,
     get_skills,
@@ -150,7 +151,7 @@ For questions about ARCHITECTURE, CODE, or HOW THINGS WORK:
 - NEVER use: get_projects, get_skills, get_professional_experience
 
 For questions about GEORGE'S BACKGROUND or EXPERIENCE:
-- ONLY use: get_projects, get_skills, get_professional_experience
+- ONLY use: get_projects, get_skills, get_professional_experience, get_education
 - NEVER use: clone_codebase, get_folder_tree, get_file_content
 
 "Glass Box" refers to THIS portfolio website's codebase.
@@ -187,6 +188,7 @@ The portfolio is built with:
 - "Tell me about your experience" → `get_professional_experience`
 - "What are your skills?" → `get_skills`
 - "What projects have you worked on?" → `get_projects`
+- "What is your education?" → `get_education`
 
 **Use Codebase Tools for architecture/code/system questions:**
 - "Explain the architecture" → codebase tools
@@ -248,6 +250,7 @@ def create_agent() -> Agent:
         logged_tool(get_professional_experience),
         logged_tool(get_skills),
         logged_tool(get_projects),
+        logged_tool(get_education),
         # Codebase tools
         logged_tool(clone_codebase),
         logged_tool(get_folder_tree),
