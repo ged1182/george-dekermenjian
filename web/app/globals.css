@@ -124,3 +124,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Streamdown external link modal - fix padding */
+[data-streamdown="link-safety-modal"] > div {
+  padding: 1.25rem !important;
+  gap: 1rem !important;
+}
+
+/* URL display box */
+[data-streamdown="link-safety-modal"] .bg-muted {
+  padding: 0.75rem !important;
+}
+
+/* Button row */
+[data-streamdown="link-safety-modal"] .flex.gap-2:last-child {
+  margin-top: 0.25rem;
+}

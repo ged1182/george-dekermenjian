@@ -18,11 +18,14 @@ import {
   type LogEntryType,
 } from "@/lib/api";
 import {
+  BrainIcon,
   CheckCircleIcon,
   ChevronDownIcon,
   ClockIcon,
   FileInputIcon,
+  FileOutputIcon,
   GaugeIcon,
+  MessageSquareTextIcon,
   RouteIcon,
   ShieldCheckIcon,
   WrenchIcon,
@@ -40,7 +43,10 @@ function getTypeIcon(type: LogEntryType): ReactNode {
   const icons: Record<LogEntryType, ReactNode> = {
     input: <FileInputIcon className="size-3.5" />,
     routing: <RouteIcon className="size-3.5" />,
+    thinking: <BrainIcon className="size-3.5" />,
+    text: <MessageSquareTextIcon className="size-3.5" />,
     tool_call: <WrenchIcon className="size-3.5" />,
+    tool_result: <FileOutputIcon className="size-3.5" />,
     validation: <ShieldCheckIcon className="size-3.5" />,
     performance: <GaugeIcon className="size-3.5" />,
   };
@@ -123,7 +129,7 @@ export const LogEntry = memo(function LogEntry({
             <span className="font-mono">{formatTimestamp(entry.timestamp)}</span>
             <span className="text-border">|</span>
             <span>{getLogTypeLabel(entry.type)}</span>
-            {entry.duration_ms !== undefined && (
+            {entry.duration_ms != null && entry.duration_ms > 0 && (
               <>
                 <span className="text-border">|</span>
                 <span>{formatDuration(entry.duration_ms)}</span>

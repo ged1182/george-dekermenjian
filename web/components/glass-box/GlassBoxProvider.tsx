@@ -14,6 +14,9 @@ import type { BrainLogEntry } from "@/lib/api";
 // Context Types
 // ============================================================================
 
+/** Which panel is shown on the right side */
+export type RightPanelMode = "none" | "brainlog" | "profile";
+
 interface GlassBoxContextValue {
   /** Whether Glass Box mode is enabled */
   isEnabled: boolean;
@@ -33,6 +36,12 @@ interface GlassBoxContextValue {
   clearEntries: () => void;
   /** Update an existing entry by ID */
   updateEntry: (id: string, updates: Partial<BrainLogEntry>) => void;
+  /** Current right panel mode */
+  rightPanelMode: RightPanelMode;
+  /** Set right panel mode */
+  setRightPanelMode: (mode: RightPanelMode) => void;
+  /** Toggle a specific panel (opens it or closes if already open) */
+  togglePanel: (panel: "brainlog" | "profile") => void;
 }
 
 // ============================================================================
@@ -69,9 +78,26 @@ export function GlassBoxProvider({
 }: GlassBoxProviderProps) {
   const [isEnabled, setIsEnabled] = useState(defaultEnabled);
   const [entries, setEntries] = useState<BrainLogEntry[]>([]);
+  const [rightPanelMode, setRightPanelModeInternal] = useState<RightPanelMode>("none");
+
+  // Wrapper to sync isEnabled when setting rightPanelMode
+  const setRightPanelMode = useCallback((mode: RightPanelMode) => {
+    setRightPanelModeInternal(mode);
+    // Sync isEnabled with brainlog panel visibility
+    setIsEnabled(mode === "brainlog");
+  }, []);
 
   const toggle = useCallback(() => {
     setIsEnabled((prev) => !prev);
+  }, []);
+
+  const togglePanel = useCallback((panel: "brainlog" | "profile") => {
+    setRightPanelModeInternal((prev: RightPanelMode) => {
+      const newMode: RightPanelMode = prev === panel ? "none" : panel;
+      // Sync isEnabled with brainlog panel visibility
+      setIsEnabled(newMode === "brainlog");
+      return newMode;
+    });
   }, []);
 
   const enable = useCallback(() => {
@@ -138,6 +164,9 @@ export function GlassBoxProvider({
       addEntries,
       clearEntries,
       updateEntry,
+      rightPanelMode,
+      setRightPanelMode,
+      togglePanel,
     }),
     [
       isEnabled,
@@ -149,6 +178,8 @@ export function GlassBoxProvider({
       addEntries,
       clearEntries,
       updateEntry,
+      rightPanelMode,
+      togglePanel,
     ]
   );
 

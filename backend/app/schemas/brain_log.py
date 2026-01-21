@@ -23,7 +23,10 @@ class LogEntryType(str, Enum):
 
     INPUT = "input"
     ROUTING = "routing"
+    THINKING = "thinking"
+    TEXT = "text"
     TOOL_CALL = "tool_call"
+    TOOL_RESULT = "tool_result"
     VALIDATION = "validation"
     PERFORMANCE = "performance"
 
@@ -105,6 +108,50 @@ class RoutingLogEntry(BrainLogEntry):
         )
 
 
+class ThinkingLogEntry(BrainLogEntry):
+    """Log entry for model thinking/reasoning."""
+
+    type: LogEntryType = LogEntryType.THINKING
+
+    @classmethod
+    def create(
+        cls,
+        thinking_text: str,
+    ) -> "ThinkingLogEntry":
+        """Create a thinking log entry."""
+        preview = thinking_text[:200] + "..." if len(thinking_text) > 200 else thinking_text
+        return cls(
+            title="Model reasoning",
+            details={
+                "preview": preview,
+                "length": len(thinking_text),
+            },
+        )
+
+
+class TextLogEntry(BrainLogEntry):
+    """Log entry for model text output."""
+
+    type: LogEntryType = LogEntryType.TEXT
+
+    @classmethod
+    def create(
+        cls,
+        text: str,
+        is_partial: bool = False,
+    ) -> "TextLogEntry":
+        """Create a text output log entry."""
+        preview = text[:200] + "..." if len(text) > 200 else text
+        return cls(
+            title="Text response" if not is_partial else "Text chunk",
+            details={
+                "preview": preview,
+                "length": len(text),
+                "is_partial": is_partial,
+            },
+        )
+
+
 class ToolCallLogEntry(BrainLogEntry):
     """Log entry for tool execution."""
 
@@ -151,6 +198,39 @@ class ToolCallLogEntry(BrainLogEntry):
             title=f"Calling {tool_name}...",
             details=details,
             status=LogEntryStatus.PENDING,
+        )
+
+
+class ToolResultLogEntry(BrainLogEntry):
+    """Log entry for tool execution results (separate from invocation)."""
+
+    type: LogEntryType = LogEntryType.TOOL_RESULT
+
+    @classmethod
+    def create(
+        cls,
+        tool_name: str,
+        result_preview: str | None = None,
+        status: LogEntryStatus = LogEntryStatus.SUCCESS,
+        error: str | None = None,
+        duration_ms: float | None = None,
+    ) -> "ToolResultLogEntry":
+        """Create a tool result log entry."""
+        details: dict[str, Any] = {"tool": tool_name}
+        if result_preview:
+            details["result_preview"] = result_preview
+        if error:
+            details["error"] = error
+
+        title = f"Tool result: {tool_name}"
+        if status == LogEntryStatus.FAILURE:
+            title = f"Tool failed: {tool_name}"
+
+        return cls(
+            title=title,
+            details=details,
+            status=status,
+            duration_ms=duration_ms,
         )
 
 
@@ -330,6 +410,10 @@ class BrainLogCollector:
         elif status == LogEntryStatus.FAILURE:
             entry.title = f"Tool call failed: {tool_name}"
 
+        # Add updated entry back to pending list for streaming
+        self.entries.append(entry)
+        self._pending.append(entry)
+
     def add_tool_call_complete(
         self,
         tool_name: str,
@@ -379,6 +463,34 @@ class BrainLogCollector:
             total_ms=total_ms,
             tokens_in=tokens_in,
             tokens_out=tokens_out,
+        )
+        self.add(entry)
+
+    def add_thinking_entry(self, thinking_text: str) -> None:
+        """Add a thinking/reasoning entry."""
+        entry = ThinkingLogEntry.create(thinking_text=thinking_text)
+        self.add(entry)
+
+    def add_text_entry(self, text: str, is_partial: bool = False) -> None:
+        """Add a text output entry."""
+        entry = TextLogEntry.create(text=text, is_partial=is_partial)
+        self.add(entry)
+
+    def add_tool_result_entry(
+        self,
+        tool_name: str,
+        result_preview: str | None = None,
+        status: LogEntryStatus = LogEntryStatus.SUCCESS,
+        error: str | None = None,
+        duration_ms: float | None = None,
+    ) -> None:
+        """Add a tool result entry (separate from invocation)."""
+        entry = ToolResultLogEntry.create(
+            tool_name=tool_name,
+            result_preview=result_preview,
+            status=status,
+            error=error,
+            duration_ms=duration_ms,
         )
         self.add(entry)
 

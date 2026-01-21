@@ -16,6 +16,15 @@ from pydantic import BaseModel, Field
 from ..config import get_settings
 
 
+def _check_codebase_exists() -> str | None:
+    """Check if codebase exists, return error message if not."""
+    settings = get_settings()
+    codebase_path = Path(settings.codebase_root)
+    if not codebase_path.exists():
+        return f"Codebase not found at {codebase_path}. Call clone_codebase() first to clone the repository."
+    return None
+
+
 class ModuleInfo(BaseModel):
     """Information about a module/directory in the codebase."""
 
@@ -410,10 +419,23 @@ def get_module_structure() -> ModuleStructureResult:
     - "What are the main modules?"
     - "Explain the architecture"
 
+    NOTE: Call clone_codebase() first if the codebase hasn't been cloned yet.
+
     Returns:
         ModuleStructureResult with module information and architecture pattern.
     """
     print("[TOOL] get_module_structure called")
+
+    # Check if codebase exists
+    error = _check_codebase_exists()
+    if error:
+        return ModuleStructureResult(
+            root_path="",
+            modules=[],
+            architecture_type=error,
+            layers={},
+        )
+
     settings = get_settings()
     root = Path(settings.codebase_root)
 
@@ -517,6 +539,8 @@ def get_dependency_graph(scope: str = "all") -> DependencyGraphResult:
     - "Are there circular dependencies?"
     - "What files are entry points?"
 
+    NOTE: Call clone_codebase() first if the codebase hasn't been cloned yet.
+
     Args:
         scope: Scope of analysis - "all", "backend", "frontend", or a specific path
 
@@ -524,6 +548,18 @@ def get_dependency_graph(scope: str = "all") -> DependencyGraphResult:
         DependencyGraphResult with nodes, edges, and analysis.
     """
     print(f"[TOOL] get_dependency_graph called with scope: {scope}")
+
+    # Check if codebase exists
+    error = _check_codebase_exists()
+    if error:
+        return DependencyGraphResult(
+            nodes=[],
+            edges=[],
+            entry_points=[],
+            leaf_nodes=[],
+            circular_dependencies=[],
+        )
+
     settings = get_settings()
     root = Path(settings.codebase_root)
 
@@ -619,10 +655,21 @@ def get_api_contracts() -> APIContractsResult:
     - "What are the API contracts?"
     - "Show me the type definitions"
 
+    NOTE: Call clone_codebase() first if the codebase hasn't been cloned yet.
+
     Returns:
         APIContractsResult with all schemas and endpoints.
     """
     print("[TOOL] get_api_contracts called")
+
+    # Check if codebase exists
+    error = _check_codebase_exists()
+    if error:
+        return APIContractsResult(
+            schemas=[],
+            endpoints=[],
+        )
+
     settings = get_settings()
     root = Path(settings.codebase_root)
 

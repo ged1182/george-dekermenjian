@@ -71,7 +71,7 @@ export interface ProfileData {
 // Brain Log Types
 // ============================================================================
 
-export type LogEntryType = 'input' | 'routing' | 'tool_call' | 'validation' | 'performance';
+export type LogEntryType = 'input' | 'routing' | 'thinking' | 'text' | 'tool_call' | 'tool_result' | 'validation' | 'performance';
 
 export type LogEntryStatus = 'pending' | 'success' | 'failure';
 
@@ -112,7 +112,7 @@ export function isBrainLogEntry(data: unknown): data is BrainLogEntry {
     typeof entry.id === 'string' &&
     typeof entry.timestamp === 'number' &&
     typeof entry.type === 'string' &&
-    ['input', 'routing', 'tool_call', 'validation', 'performance'].includes(entry.type) &&
+    ['input', 'routing', 'thinking', 'text', 'tool_call', 'tool_result', 'validation', 'performance'].includes(entry.type) &&
     typeof entry.title === 'string' &&
     typeof entry.details === 'object' &&
     entry.details !== null &&
@@ -136,13 +136,18 @@ export function parseBrainLogFromData(data: unknown[]): BrainLogEntry[] {
     if (isBrainLogEntry(item)) {
       entries.push(item);
     } else if (typeof item === 'object' && item !== null) {
-      // Check if it's wrapped in a brainLog property
       const wrapped = item as Record<string, unknown>;
-      if (wrapped.brainLog && isBrainLogEntry(wrapped.brainLog)) {
+
+      // Check if it's in AI SDK v5 data-* format: {"type": "data-brainlog", "data": {...}}
+      if (wrapped.type === 'data-brainlog' && wrapped.data && isBrainLogEntry(wrapped.data)) {
+        entries.push(wrapped.data as BrainLogEntry);
+      }
+      // Check if it's wrapped in a brainLog property (legacy)
+      else if (wrapped.brainLog && isBrainLogEntry(wrapped.brainLog)) {
         entries.push(wrapped.brainLog);
       }
-      // Check if it's an array of entries
-      if (Array.isArray(wrapped.brainLogEntries)) {
+      // Check if it's an array of entries (legacy)
+      else if (Array.isArray(wrapped.brainLogEntries)) {
         for (const entry of wrapped.brainLogEntries) {
           if (isBrainLogEntry(entry)) {
             entries.push(entry);
@@ -176,11 +181,18 @@ export function formatTimestamp(timestamp: number): string {
 /**
  * Formats duration in milliseconds for display
  */
-export function formatDuration(ms: number): string {
-  if (ms < 1000) {
-    return `${ms}ms`;
+export function formatDuration(ms: number | null | undefined): string {
+  if (ms === null || ms === undefined) {
+    return '';
   }
-  return `${(ms / 1000).toFixed(2)}s`;
+  if (ms >= 1000) {
+    return `${(ms / 1000).toFixed(2)}s`;
+  }
+  if (ms >= 1) {
+    return `${Math.round(ms)}ms`;
+  }
+  // Sub-millisecond: show 2 decimal places
+  return `${ms.toFixed(2)}ms`;
 }
 
 /**
@@ -190,7 +202,10 @@ export function getLogTypeLabel(type: LogEntryType): string {
   const labels: Record<LogEntryType, string> = {
     input: 'Input',
     routing: 'Routing',
+    thinking: 'Thinking',
+    text: 'Text',
     tool_call: 'Tool Call',
+    tool_result: 'Tool Result',
     validation: 'Validation',
     performance: 'Performance',
   };
@@ -216,7 +231,10 @@ export function getTypeColorClass(type: LogEntryType): string {
   const colors: Record<LogEntryType, string> = {
     input: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
     routing: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+    thinking: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
+    text: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
     tool_call: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+    tool_result: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
     validation: 'bg-green-500/10 text-green-600 dark:text-green-400',
     performance: 'bg-slate-500/10 text-slate-600 dark:text-slate-400',
   };

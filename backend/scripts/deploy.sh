@@ -81,6 +81,7 @@ PROJECT_ID=""
 LOCAL_BUILD=false
 TAG="latest"
 DRY_RUN=false
+COMMIT_HASH=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -96,6 +97,10 @@ while [[ $# -gt 0 ]]; do
             TAG="$2"
             shift 2
             ;;
+        --commit|-c)
+            COMMIT_HASH="$2"
+            shift 2
+            ;;
         --dry-run)
             DRY_RUN=true
             shift
@@ -107,6 +112,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --project, -p PROJECT_ID  GCP project ID (required)"
             echo "  --local, -l               Build locally instead of Cloud Build"
             echo "  --tag, -t TAG             Docker image tag (default: latest)"
+            echo "  --commit, -c COMMIT_HASH  Git commit hash for codebase (default: current HEAD)"
             echo "  --dry-run                 Show commands without executing"
             echo "  --help, -h                Show this help message"
             exit 0
@@ -117,6 +123,12 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Get current commit hash if not provided
+if [[ -z "$COMMIT_HASH" ]]; then
+    COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "main")
+    log_info "Using commit hash from current HEAD: ${COMMIT_HASH}"
+fi
 
 # -----------------------------------------------------------------------------
 # Validation
@@ -146,6 +158,7 @@ log_info "  Project:  ${PROJECT_ID}"
 log_info "  Service:  ${SERVICE_NAME}"
 log_info "  Region:   ${REGION}"
 log_info "  Image:    ${IMAGE_NAME}:${TAG}"
+log_info "  Commit:   ${COMMIT_HASH}"
 log_info "  Build:    $([ "$LOCAL_BUILD" = true ] && echo 'Local' || echo 'Cloud Build')"
 echo ""
 
@@ -164,7 +177,7 @@ if [[ "$LOCAL_BUILD" = true ]]; then
         exit 1
     fi
 
-    BUILD_CMD="docker build -t ${IMAGE_NAME}:${TAG} ."
+    BUILD_CMD="docker build --build-arg CODEBASE_COMMIT_HASH=${COMMIT_HASH} -t ${IMAGE_NAME}:${TAG} ."
     if [[ "$DRY_RUN" = true ]]; then
         log_info "Would run: $BUILD_CMD"
     else
@@ -186,7 +199,8 @@ if [[ "$LOCAL_BUILD" = true ]]; then
 else
     # Cloud Build
     log_info "Building with Google Cloud Build..."
-    BUILD_CMD="gcloud builds submit --tag ${IMAGE_NAME}:${TAG} --project ${PROJECT_ID} ."
+    # Use substitutions to pass build args to Cloud Build
+    BUILD_CMD="gcloud builds submit --tag ${IMAGE_NAME}:${TAG} --project ${PROJECT_ID} --substitutions=_CODEBASE_COMMIT_HASH=${COMMIT_HASH} ."
     if [[ "$DRY_RUN" = true ]]; then
         log_info "Would run: $BUILD_CMD"
     else

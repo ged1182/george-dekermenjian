@@ -125,11 +125,11 @@ export function CodebaseResult({ toolName, data }: CodebaseResultProps) {
         )}
       </button>
       {isExpanded && (
-        <div className="border-t">
+        <div className="border-t max-h-80 overflow-auto">
           <CodeBlock
             code={JSON.stringify(data, null, 2)}
             language="json"
-            className="max-h-80 border-0 rounded-none"
+            className="border-0 rounded-none"
           >
             <CodeBlockCopyButton />
           </CodeBlock>
@@ -144,7 +144,7 @@ export function CodebaseResult({ toolName, data }: CodebaseResultProps) {
 // =============================================================================
 
 function SymbolResult({ data }: { data: FindSymbolOutput }) {
-  const [isExpanded, setIsExpanded] = useState(data.total_found <= 3);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className="bg-card text-card-foreground my-4 overflow-hidden rounded-lg border shadow-sm">
@@ -167,7 +167,7 @@ function SymbolResult({ data }: { data: FindSymbolOutput }) {
         )}
       </button>
       {isExpanded && (
-        <div className="mt-0 space-y-3 border-t px-4 pb-4 pt-3">
+        <div className="mt-0 space-y-3 border-t px-4 pb-4 pt-3 max-h-96 overflow-auto">
           {data.locations.map((loc, idx) => (
             <div key={`${loc.file}-${loc.line}-${idx}`}>
               <div className="text-muted-foreground mb-1 flex items-center gap-2 text-xs">
@@ -196,7 +196,7 @@ function SymbolResult({ data }: { data: FindSymbolOutput }) {
 // =============================================================================
 
 function FileContentResult({ data }: { data: FileContentOutput }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className="bg-card text-card-foreground my-4 overflow-hidden rounded-lg border shadow-sm">
@@ -222,12 +222,12 @@ function FileContentResult({ data }: { data: FileContentOutput }) {
         )}
       </button>
       {isExpanded && (
-        <div className="border-t">
+        <div className="border-t max-h-96 overflow-auto">
           <CodeBlock
             code={stripLineNumbers(data.content)}
             language={normalizeLanguage(data.language)}
             showLineNumbers
-            className="max-h-96 border-0 rounded-none"
+            className="border-0 rounded-none"
           >
             <CodeBlockCopyButton />
           </CodeBlock>
@@ -242,7 +242,7 @@ function FileContentResult({ data }: { data: FileContentOutput }) {
 // =============================================================================
 
 function ReferencesResult({ data }: { data: FindReferencesOutput }) {
-  const [isExpanded, setIsExpanded] = useState(data.total_found <= 5);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className="bg-card text-card-foreground my-4 overflow-hidden rounded-lg border shadow-sm">
@@ -265,7 +265,7 @@ function ReferencesResult({ data }: { data: FindReferencesOutput }) {
         )}
       </button>
       {isExpanded && (
-        <div className="bg-muted/30 mt-0 space-y-1 border-t px-4 pb-4">
+        <div className="bg-muted/30 mt-0 space-y-1 border-t px-4 pb-4 max-h-80 overflow-auto">
           {data.references.map((ref, idx) => (
             <div
               key={`${ref.file}-${ref.line}-${idx}`}

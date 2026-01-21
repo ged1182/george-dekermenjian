@@ -47,14 +47,14 @@ export const BrainLog = memo(function BrainLog({
   return (
     <aside
       className={cn(
-        "flex h-full flex-col border-l bg-card",
+        "flex h-full flex-col overflow-hidden border-l bg-card",
         className
       )}
       aria-label="Brain Log - Agent reasoning and decisions"
       {...props}
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+      <div className="flex-shrink-0 flex items-center justify-between gap-2 border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <BrainIcon className="size-4 text-primary" />
           <h2 className="font-semibold text-sm">Brain Log</h2>
@@ -89,7 +89,7 @@ export const BrainLog = memo(function BrainLog({
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div ref={scrollRef} className="p-2">
           {entries.length === 0 ? (
             <BrainLogEmptyState />
@@ -153,7 +153,7 @@ function BrainLogFooter() {
   };
 
   return (
-    <div className="border-t px-4 py-2">
+    <div className="flex-shrink-0 border-t px-4 py-2">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">

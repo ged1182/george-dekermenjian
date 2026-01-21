@@ -8,6 +8,7 @@ import { nanoid } from "nanoid";
 import { cn } from "@/lib/utils";
 import { CHAT_ENDPOINT, parseBrainLogFromData } from "@/lib/api";
 import { useGlassBox } from "@/components/glass-box";
+import { ToolResultRenderer } from "@/components/tool-results";
 
 // AI Elements
 import {
@@ -28,7 +29,12 @@ import {
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
 import { Loader } from "@/components/ai-elements/loader";
-import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
+import {
+  Reasoning,
+  ReasoningTrigger,
+  ReasoningContent,
+} from "@/components/ai-elements/reasoning";
+// Suggestions moved to quick start grid above input
 
 // Icons
 import { BotIcon, UserIcon } from "lucide-react";
@@ -79,11 +85,8 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
     onData: (dataPart: unknown) => {
       // Parse Brain Log entries from the stream
       // AI SDK 5 sends individual data parts, not arrays
-      console.log("[BrainLog] onData received:", dataPart);
-      if (isEnabled && dataPart) {
-        // Try to parse as a single entry or wrapped entry
+      if (dataPart) {
         const entries = parseBrainLogFromData([dataPart]);
-        console.log("[BrainLog] Parsed entries:", entries);
         if (entries.length > 0) {
           addEntries(entries);
         }
@@ -137,10 +140,6 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
     []
   );
 
-  // Handle suggestion click
-  const handleSuggestionClick = useCallback((suggestion: string) => {
-    setInput(suggestion);
-  }, []);
 
   // Handle form submission
   const handleFormSubmit = useCallback(
@@ -170,6 +169,31 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
     [input, isLoading, sendMessage, addEntry, isEnabled]
   );
 
+  // Handle quick start suggestion click - sends message directly
+  const handleQuickStart = useCallback(
+    (suggestion: string) => {
+      if (isLoading) return;
+
+      // Log user message for Brain Log
+      if (isEnabled) {
+        addEntry({
+          id: nanoid(),
+          timestamp: Date.now(),
+          type: "input",
+          title: "User message received",
+          details: {
+            length: suggestion.length,
+            preview: suggestion,
+          },
+          status: "success",
+        });
+      }
+
+      sendMessage({ text: suggestion });
+    },
+    [isLoading, sendMessage, addEntry, isEnabled]
+  );
+
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Conversation Area */}
@@ -180,20 +204,7 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
               title="Welcome to Glass Box"
               description="Ask me anything about my experience, this system's architecture, or the codebase."
               icon={<BotIcon className="size-8" />}
-            >
-              {/* Quick Start Suggestions */}
-              <div className="mt-6">
-                <Suggestions className="justify-center">
-                  {STARTER_SUGGESTIONS.map((suggestion) => (
-                    <Suggestion
-                      key={suggestion}
-                      suggestion={suggestion}
-                      onClick={handleSuggestionClick}
-                    />
-                  ))}
-                </Suggestions>
-              </div>
-            </ConversationEmptyState>
+            />
           ) : (
             messages.map((message, index) => (
               <ChatMessage
@@ -228,6 +239,29 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
+
+      {/* Quick Start Grid - pinned above input when no messages */}
+      {messages.length === 0 && (
+        <div className="border-t bg-muted/30 px-4 py-3">
+          <div className="mx-auto max-w-3xl">
+            <p className="mb-2 text-center text-xs font-medium text-muted-foreground">
+              Quick Start
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {STARTER_SUGGESTIONS.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => handleQuickStart(suggestion)}
+                  disabled={isLoading}
+                  className="rounded-md border bg-background px-3 py-2 text-left text-xs transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="border-t bg-background p-4">
@@ -270,39 +304,89 @@ interface ChatMessageProps {
 
 function ChatMessage({ message, isStreaming }: ChatMessageProps) {
   const isUser = message.role === "user";
-  const textContent = getMessageText(message);
+  const parts = message.parts ?? [];
 
+  // For user messages, just show text
+  if (isUser) {
+    const textContent = getMessageText(message);
+    return (
+      <Message from={message.role}>
+        <div className="flex items-start gap-3">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <UserIcon className="size-4" />
+          </div>
+          <MessageContent className="flex-1 pt-1">
+            <p className="text-sm whitespace-pre-wrap">{textContent}</p>
+          </MessageContent>
+        </div>
+      </Message>
+    );
+  }
+
+  // For assistant messages, render parts in order (preserves interleaving)
   return (
     <Message from={message.role}>
-      {/* Avatar */}
       <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-md",
-            isUser ? "bg-primary text-primary-foreground" : "bg-muted"
-          )}
-        >
-          {isUser ? (
-            <UserIcon className="size-4" />
-          ) : (
-            <BotIcon className="size-4" />
-          )}
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
+          <BotIcon className="size-4" />
         </div>
-
-        {/* Content */}
         <MessageContent className="flex-1 pt-1">
-          {isUser ? (
-            <p className="text-sm whitespace-pre-wrap">{textContent}</p>
-          ) : (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <MessageResponse>{textContent}</MessageResponse>
-              {isStreaming && (
-                <span className="inline-block ml-1">
-                  <Loader size={12} />
-                </span>
-              )}
-            </div>
-          )}
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            {parts.map((part, index) => {
+              // Text part
+              if (part.type === "text") {
+                const isLastPart = index === parts.length - 1;
+                return (
+                  <span key={index}>
+                    <MessageResponse>{part.text}</MessageResponse>
+                    {isStreaming && isLastPart && (
+                      <span className="inline-block ml-1">
+                        <Loader size={12} />
+                      </span>
+                    )}
+                  </span>
+                );
+              }
+
+              // Reasoning/thinking part
+              if (part.type === "reasoning") {
+                const reasoningPart = part as { type: "reasoning"; text: string };
+                return (
+                  <Reasoning key={index} isStreaming={isStreaming} defaultOpen={false}>
+                    <ReasoningTrigger />
+                    <ReasoningContent>{reasoningPart.text}</ReasoningContent>
+                  </Reasoning>
+                );
+              }
+
+              // Step-start part (internal marker, don't render)
+              if (part.type === "step-start") {
+                return null;
+              }
+
+              // Tool part (type is "tool-{toolName}")
+              if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+                const toolPart = part as {
+                  type: string;
+                  toolCallId: string;
+                  toolName: string;
+                  state: string;
+                  output?: unknown;
+                };
+                return (
+                  <ToolResultRenderer
+                    key={toolPart.toolCallId || index}
+                    toolName={toolPart.toolName || toolPart.type.replace("tool-", "")}
+                    toolCallId={toolPart.toolCallId}
+                    state={toolPart.state as "input-streaming" | "input-available" | "output-streaming" | "output-available" | "output-error"}
+                    output={toolPart.output}
+                  />
+                );
+              }
+
+              return null;
+            })}
+          </div>
         </MessageContent>
       </div>
     </Message>

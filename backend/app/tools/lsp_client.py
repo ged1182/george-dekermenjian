@@ -148,7 +148,7 @@ class CallHierarchyIncomingCall:
 
 
 @dataclass
-class LSPClient:
+class CodeClient:
     """Client for communicating with an LSP server."""
 
     server_type: LanguageServer
@@ -711,12 +711,12 @@ class LSPClient:
         return mapping.get(ext, "plaintext")
 
 
-class LSPManager:
+class CodeManager:
     """Manager for multiple LSP clients."""
 
     def __init__(self, workspace_root: str):
         self.workspace_root = workspace_root
-        self._clients: dict[LanguageServer, LSPClient] = {}
+        self._clients: dict[LanguageServer, CodeClient] = {}
         self._initialized = False
 
     async def initialize(self) -> dict[str, bool]:
@@ -728,14 +728,14 @@ class LSPManager:
         results = {}
 
         # Try to start TypeScript server
-        ts_client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        ts_client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         ts_success = await ts_client.start(self.workspace_root)
         results["typescript"] = ts_success
         if ts_success:
             self._clients[LanguageServer.TYPESCRIPT] = ts_client
 
         # Try to start Python server
-        py_client = LSPClient(server_type=LanguageServer.PYTHON)
+        py_client = CodeClient(server_type=LanguageServer.PYTHON)
         py_success = await py_client.start(self.workspace_root)
         results["python"] = py_success
         if py_success:
@@ -751,7 +751,7 @@ class LSPManager:
         self._clients.clear()
         self._initialized = False
 
-    def get_client(self, file_path: str) -> LSPClient | None:
+    def get_client(self, file_path: str) -> CodeClient | None:
         """Get the appropriate LSP client for a file.
 
         Args:
@@ -776,10 +776,10 @@ class LSPManager:
 
 
 # Global LSP manager instance (lazily initialized)
-_lsp_manager: LSPManager | None = None
+_code_manager: CodeManager | None = None
 
 
-async def get_lsp_manager(workspace_root: str | None = None) -> LSPManager:
+async def get_code_manager(workspace_root: str | None = None) -> CodeManager:
     """Get or create the global LSP manager.
 
     Args:
@@ -788,20 +788,20 @@ async def get_lsp_manager(workspace_root: str | None = None) -> LSPManager:
     Returns:
         The LSP manager instance
     """
-    global _lsp_manager
+    global _code_manager
 
-    if _lsp_manager is None:
+    if _code_manager is None:
         if workspace_root is None:
             raise ValueError("workspace_root is required for first initialization")
-        _lsp_manager = LSPManager(workspace_root)
-        await _lsp_manager.initialize()
+        _code_manager = CodeManager(workspace_root)
+        await _code_manager.initialize()
 
-    return _lsp_manager
+    return _code_manager
 
 
-async def shutdown_lsp_manager() -> None:
+async def shutdown_code_manager() -> None:
     """Shutdown the global LSP manager."""
-    global _lsp_manager
-    if _lsp_manager:
-        await _lsp_manager.shutdown()
-        _lsp_manager = None
+    global _code_manager
+    if _code_manager:
+        await _code_manager.shutdown()
+        _code_manager = None

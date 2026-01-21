@@ -18,10 +18,10 @@ from app.tools.lsp_client import (
     SymbolInformation,
     HoverResult,
     CallHierarchyItem,
-    LSPClient,
-    LSPManager,
-    get_lsp_manager,
-    shutdown_lsp_manager,
+    CodeClient,
+    CodeManager,
+    get_code_manager,
+    shutdown_code_manager,
 )
 
 
@@ -179,7 +179,7 @@ class TestCallHierarchyItem:
 # ============================================================================
 
 
-class TestLSPClientLanguageServer:
+class TestCodeClientLanguageServer:
     """Tests for LanguageServer enum."""
 
     def test_typescript_server(self):
@@ -189,99 +189,99 @@ class TestLSPClientLanguageServer:
         assert LanguageServer.PYTHON.value == "python"
 
 
-class TestLSPClientServerCommand:
+class TestCodeClientServerCommand:
     """Tests for LSP client server command generation."""
 
     def test_typescript_command(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         cmd = client._get_server_command()
         assert cmd == ["typescript-language-server", "--stdio"]
 
     def test_python_command(self):
-        client = LSPClient(server_type=LanguageServer.PYTHON)
+        client = CodeClient(server_type=LanguageServer.PYTHON)
         cmd = client._get_server_command()
         assert cmd == ["pyright-langserver", "--stdio"]
 
 
-class TestLSPClientLanguageId:
+class TestCodeClientLanguageId:
     """Tests for language ID detection."""
 
     def test_python_language_id(self):
-        client = LSPClient(server_type=LanguageServer.PYTHON)
+        client = CodeClient(server_type=LanguageServer.PYTHON)
         assert client._get_language_id("/path/to/file.py") == "python"
 
     def test_typescript_language_id(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         assert client._get_language_id("/path/to/file.ts") == "typescript"
 
     def test_tsx_language_id(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         assert client._get_language_id("/path/to/component.tsx") == "typescriptreact"
 
     def test_javascript_language_id(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         assert client._get_language_id("/path/to/script.js") == "javascript"
 
     def test_jsx_language_id(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         assert client._get_language_id("/path/to/component.jsx") == "javascriptreact"
 
     def test_json_language_id(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         assert client._get_language_id("/path/to/config.json") == "json"
 
     def test_unknown_language_id(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         assert client._get_language_id("/path/to/file.xyz") == "plaintext"
 
 
-class TestLSPClientNotInitialized:
+class TestCodeClientNotInitialized:
     """Tests for LSP client when not initialized."""
 
     @pytest.mark.asyncio
     async def test_go_to_definition_not_initialized(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         # _initialized is False by default
         result = await client.go_to_definition("/test/file.ts", 0, 0)
         assert result == []
 
     @pytest.mark.asyncio
     async def test_find_references_not_initialized(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         result = await client.find_references("/test/file.ts", 0, 0)
         assert result == []
 
     @pytest.mark.asyncio
     async def test_hover_not_initialized(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         result = await client.hover("/test/file.ts", 0, 0)
         assert result is None
 
     @pytest.mark.asyncio
     async def test_document_symbols_not_initialized(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         result = await client.document_symbols("/test/file.ts")
         assert result == []
 
     @pytest.mark.asyncio
     async def test_workspace_symbols_not_initialized(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         result = await client.workspace_symbols("test")
         assert result == []
 
     @pytest.mark.asyncio
     async def test_prepare_call_hierarchy_not_initialized(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         result = await client.prepare_call_hierarchy("/test/file.ts", 0, 0)
         assert result == []
 
 
-class TestLSPClientStart:
+class TestCodeClientStart:
     """Tests for LSP client start behavior."""
 
     @pytest.mark.asyncio
     async def test_start_fails_when_server_not_found(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
 
         with patch("subprocess.Popen") as mock_popen:
             mock_popen.side_effect = FileNotFoundError("Server not found")
@@ -296,16 +296,16 @@ class TestLSPClientStart:
 # ============================================================================
 
 
-class TestLSPManager:
-    """Tests for LSPManager."""
+class TestCodeManager:
+    """Tests for CodeManager."""
 
     def test_create_manager(self):
-        manager = LSPManager(workspace_root="/test/workspace")
+        manager = CodeManager(workspace_root="/test/workspace")
         assert manager.workspace_root == "/test/workspace"
         assert manager._initialized is False
 
     def test_get_client_for_typescript(self):
-        manager = LSPManager(workspace_root="/test")
+        manager = CodeManager(workspace_root="/test")
         # Add a mock client
         mock_client = MagicMock()
         manager._clients[LanguageServer.TYPESCRIPT] = mock_client
@@ -314,7 +314,7 @@ class TestLSPManager:
         assert result == mock_client
 
     def test_get_client_for_tsx(self):
-        manager = LSPManager(workspace_root="/test")
+        manager = CodeManager(workspace_root="/test")
         mock_client = MagicMock()
         manager._clients[LanguageServer.TYPESCRIPT] = mock_client
 
@@ -322,7 +322,7 @@ class TestLSPManager:
         assert result == mock_client
 
     def test_get_client_for_python(self):
-        manager = LSPManager(workspace_root="/test")
+        manager = CodeManager(workspace_root="/test")
         mock_client = MagicMock()
         manager._clients[LanguageServer.PYTHON] = mock_client
 
@@ -330,16 +330,16 @@ class TestLSPManager:
         assert result == mock_client
 
     def test_get_client_for_unsupported_type(self):
-        manager = LSPManager(workspace_root="/test")
+        manager = CodeManager(workspace_root="/test")
         result = manager.get_client("/path/to/file.rb")  # Ruby not supported
         assert result is None
 
     def test_available_servers_empty(self):
-        manager = LSPManager(workspace_root="/test")
+        manager = CodeManager(workspace_root="/test")
         assert manager.available_servers == []
 
     def test_available_servers_with_clients(self):
-        manager = LSPManager(workspace_root="/test")
+        manager = CodeManager(workspace_root="/test")
         manager._clients[LanguageServer.TYPESCRIPT] = MagicMock()
         manager._clients[LanguageServer.PYTHON] = MagicMock()
 
@@ -349,7 +349,7 @@ class TestLSPManager:
 
     @pytest.mark.asyncio
     async def test_shutdown_clears_clients(self):
-        manager = LSPManager(workspace_root="/test")
+        manager = CodeManager(workspace_root="/test")
         mock_client = MagicMock()
         mock_client.stop = AsyncMock()
         manager._clients[LanguageServer.TYPESCRIPT] = mock_client
@@ -367,7 +367,7 @@ class TestLSPManager:
 # ============================================================================
 
 
-class TestGlobalLSPManager:
+class TestGlobalCodeManager:
     """Tests for global LSP manager functions."""
 
     @pytest.mark.asyncio
@@ -375,19 +375,19 @@ class TestGlobalLSPManager:
         # Reset global manager
         import app.tools.lsp_client as lsp_module
 
-        lsp_module._lsp_manager = None
+        lsp_module._code_manager = None
 
         with pytest.raises(ValueError, match="workspace_root is required"):
-            await get_lsp_manager(None)
+            await get_code_manager(None)
 
     @pytest.mark.asyncio
     async def test_shutdown_handles_none_manager(self):
         # Should not raise even if manager is None
         import app.tools.lsp_client as lsp_module
 
-        lsp_module._lsp_manager = None
+        lsp_module._code_manager = None
 
-        await shutdown_lsp_manager()  # Should not raise
+        await shutdown_code_manager()  # Should not raise
 
 
 # ============================================================================
@@ -395,18 +395,18 @@ class TestGlobalLSPManager:
 # ============================================================================
 
 
-class TestLSPClientSendMessage:
+class TestCodeClientSendMessage:
     """Tests for LSP client message sending."""
 
     def test_send_message_without_process_raises(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client.process = None
 
         with pytest.raises(RuntimeError, match="LSP server not running"):
             client._send_message({"jsonrpc": "2.0", "id": 1, "method": "test"})
 
     def test_send_message_format(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
 
         # Mock process with stdin
         mock_stdin = MagicMock()
@@ -425,18 +425,18 @@ class TestLSPClientSendMessage:
         assert b"Content-Length:" in written_data
 
 
-class TestLSPClientReadMessage:
+class TestCodeClientReadMessage:
     """Tests for LSP client message reading."""
 
     def test_read_message_without_process(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client.process = None
 
         result = client._read_message()
         assert result is None
 
     def test_read_message_parses_json(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
 
         # Create mock with proper header and content
         mock_stdout = MagicMock()
@@ -455,11 +455,11 @@ class TestLSPClientReadMessage:
         assert result == {"jsonrpc": "2.0", "id": 1, "result": None}
 
 
-class TestLSPClientOpenCloseDocument:
+class TestCodeClientOpenCloseDocument:
     """Tests for document open/close notifications."""
 
     def test_open_document_sends_notification(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
 
         # Mock process
         mock_stdin = MagicMock()
@@ -474,7 +474,7 @@ class TestLSPClientOpenCloseDocument:
         assert "textDocument/didOpen" in written_data
 
     def test_close_document_sends_notification(self):
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
 
         mock_stdin = MagicMock()
         mock_process = MagicMock()
@@ -488,14 +488,14 @@ class TestLSPClientOpenCloseDocument:
         assert "textDocument/didClose" in written_data
 
 
-class TestLSPManagerInitialize:
+class TestCodeManagerInitialize:
     """Tests for LSP manager initialization."""
 
     @pytest.mark.asyncio
     async def test_initialize_returns_status_dict(self):
-        manager = LSPManager(workspace_root="/test")
+        manager = CodeManager(workspace_root="/test")
 
-        with patch.object(LSPClient, "start", new_callable=AsyncMock) as mock_start:
+        with patch.object(CodeClient, "start", new_callable=AsyncMock) as mock_start:
             mock_start.return_value = False  # Servers not available
 
             result = await manager.initialize()
@@ -506,9 +506,9 @@ class TestLSPManagerInitialize:
 
     @pytest.mark.asyncio
     async def test_initialize_stores_successful_clients(self):
-        manager = LSPManager(workspace_root="/test")
+        manager = CodeManager(workspace_root="/test")
 
-        with patch.object(LSPClient, "start", new_callable=AsyncMock) as mock_start:
+        with patch.object(CodeClient, "start", new_callable=AsyncMock) as mock_start:
             # Only TypeScript server succeeds
             mock_start.side_effect = [True, False]
 
@@ -519,13 +519,13 @@ class TestLSPManagerInitialize:
         assert LanguageServer.TYPESCRIPT in manager._clients
 
 
-class TestLSPClientAsyncMethods:
+class TestCodeClientAsyncMethods:
     """Tests for async LSP client methods with mocked initialization."""
 
     @pytest.mark.asyncio
     async def test_go_to_definition_with_initialized_client(self):
         """Test go_to_definition when client is initialized."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -550,7 +550,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_go_to_definition_handles_list_result(self):
         """Test go_to_definition when LSP returns a list of locations."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -582,7 +582,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_go_to_definition_handles_exception(self):
         """Test go_to_definition handles exceptions gracefully."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -594,7 +594,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_find_references_with_initialized_client(self):
         """Test find_references when client is initialized."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -620,7 +620,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_hover_with_initialized_client(self):
         """Test hover when client is initialized."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -644,7 +644,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_hover_with_dict_contents(self):
         """Test hover with MarkupContent format."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -667,7 +667,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_hover_with_list_contents(self):
         """Test hover with MarkedString array format."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -689,7 +689,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_hover_returns_none_when_no_result(self):
         """Test hover returns None when no result."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -706,7 +706,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_document_symbols_with_location_format(self):
         """Test document_symbols with SymbolInformation format."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -736,7 +736,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_document_symbols_with_document_symbol_format(self):
         """Test document_symbols with DocumentSymbol format (has children)."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -785,7 +785,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_workspace_symbols_with_initialized_client(self):
         """Test workspace_symbols when client is initialized."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -812,7 +812,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_prepare_call_hierarchy_with_initialized_client(self):
         """Test prepare_call_hierarchy when client is initialized."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -848,7 +848,7 @@ class TestLSPClientAsyncMethods:
     @pytest.mark.asyncio
     async def test_incoming_calls_with_initialized_client(self):
         """Test incoming_calls when client is initialized."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         client._initialized = True
         client.workspace_root = "/test"
 
@@ -911,7 +911,7 @@ class TestLSPIntegration:
     @pytest.mark.asyncio
     async def test_typescript_server_starts(self, workspace_root):
         """Test that TypeScript server can start."""
-        client = LSPClient(server_type=LanguageServer.TYPESCRIPT)
+        client = CodeClient(server_type=LanguageServer.TYPESCRIPT)
         try:
             result = await client.start(workspace_root)
             # May fail if server not installed, that's okay for CI
@@ -923,7 +923,7 @@ class TestLSPIntegration:
     @pytest.mark.asyncio
     async def test_python_server_starts(self, workspace_root):
         """Test that Python server can start."""
-        client = LSPClient(server_type=LanguageServer.PYTHON)
+        client = CodeClient(server_type=LanguageServer.PYTHON)
         try:
             result = await client.start(workspace_root)
             if result:

@@ -12,7 +12,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from ..config import get_settings
-from .lsp_client import get_lsp_manager
+from .lsp_client import get_code_manager
 
 
 class DefinitionLocation(BaseModel):
@@ -236,7 +236,7 @@ async def go_to_definition(
         line, character = pos[0] + 1, pos[1]  # Convert to 1-indexed
 
     try:
-        manager = await get_lsp_manager(str(root))
+        manager = await get_code_manager(str(root))
         client = manager.get_client(str(full_path))
 
         if client is None:
@@ -343,7 +343,7 @@ async def find_all_references(
         line, character = pos[0] + 1, pos[1]
 
     try:
-        manager = await get_lsp_manager(str(root))
+        manager = await get_code_manager(str(root))
         client = manager.get_client(str(full_path))
 
         if client is None:
@@ -452,7 +452,7 @@ async def get_type_info(
         line, character = pos[0] + 1, pos[1]
 
     try:
-        manager = await get_lsp_manager(str(root))
+        manager = await get_code_manager(str(root))
         client = manager.get_client(str(full_path))
 
         if client is None:
@@ -526,7 +526,7 @@ async def get_document_symbols(file_path: str) -> DocumentSymbolsResult:
         )
 
     try:
-        manager = await get_lsp_manager(str(root))
+        manager = await get_code_manager(str(root))
         client = manager.get_client(str(full_path))
 
         if client is None:
@@ -617,7 +617,7 @@ async def get_callers(
         line, character = pos[0] + 1, pos[1]
 
     try:
-        manager = await get_lsp_manager(str(root))
+        manager = await get_code_manager(str(root))
         client = manager.get_client(str(full_path))
 
         if client is None:

@@ -45,7 +45,7 @@ def mock_codebase_root():
 @pytest.fixture
 def mock_lsp_manager():
     """Mock LSP manager for tests without actual LSP servers."""
-    with patch("app.tools.semantic.get_lsp_manager") as mock:
+    with patch("app.tools.semantic.get_code_manager") as mock:
         manager = MagicMock()
         manager.get_client.return_value = None  # Default: no LSP available
         mock.return_value = manager
@@ -395,7 +395,7 @@ class TestGoToDefinitionWithMockedLSP:
     async def test_finds_definition_and_returns_preview(self, mock_codebase_root):
         """Test successful definition lookup with mocked LSP."""
 
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             manager = MagicMock()
             mock_client = MagicMock()
 
@@ -423,7 +423,7 @@ class TestFindAllReferencesWithMockedLSP:
     @pytest.mark.asyncio
     async def test_finds_references_and_returns_context(self, mock_codebase_root):
         """Test successful reference lookup with mocked LSP."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             manager = MagicMock()
             mock_client = MagicMock()
 
@@ -451,7 +451,7 @@ class TestGetTypeInfoWithMockedLSP:
     @pytest.mark.asyncio
     async def test_gets_type_info_successfully(self, mock_codebase_root):
         """Test successful hover/type info lookup."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             manager = MagicMock()
             mock_client = MagicMock()
 
@@ -471,7 +471,7 @@ class TestGetTypeInfoWithMockedLSP:
     @pytest.mark.asyncio
     async def test_returns_error_when_no_hover_info(self, mock_codebase_root):
         """Test when hover returns None."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             manager = MagicMock()
             mock_client = MagicMock()
 
@@ -491,7 +491,7 @@ class TestGetDocumentSymbolsWithMockedLSP:
     @pytest.mark.asyncio
     async def test_gets_symbols_successfully(self, mock_codebase_root):
         """Test successful document symbol lookup."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             manager = MagicMock()
             mock_client = MagicMock()
 
@@ -521,7 +521,7 @@ class TestGetCallersWithMockedLSP:
     @pytest.mark.asyncio
     async def test_gets_callers_successfully(self, mock_codebase_root):
         """Test successful call hierarchy lookup."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             manager = MagicMock()
             mock_client = MagicMock()
 
@@ -547,7 +547,7 @@ class TestGetCallersWithMockedLSP:
     @pytest.mark.asyncio
     async def test_returns_error_when_no_call_hierarchy(self, mock_codebase_root):
         """Test when prepare_call_hierarchy returns empty."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             manager = MagicMock()
             mock_client = MagicMock()
 
@@ -567,7 +567,7 @@ class TestSemanticToolsExceptionHandling:
     @pytest.mark.asyncio
     async def test_go_to_definition_handles_exception(self, mock_codebase_root):
         """Test that exceptions are caught and returned as errors."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             mock_get.side_effect = Exception("LSP connection failed")
 
             result = await go_to_definition("backend/app/config.py", "Settings", 10, 0)
@@ -578,7 +578,7 @@ class TestSemanticToolsExceptionHandling:
     @pytest.mark.asyncio
     async def test_find_all_references_handles_exception(self, mock_codebase_root):
         """Test that exceptions are caught."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             mock_get.side_effect = Exception("Connection error")
 
             result = await find_all_references(
@@ -591,7 +591,7 @@ class TestSemanticToolsExceptionHandling:
     @pytest.mark.asyncio
     async def test_get_type_info_handles_exception(self, mock_codebase_root):
         """Test exception handling."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             mock_get.side_effect = Exception("Hover failed")
 
             result = await get_type_info("backend/app/config.py", "Settings", 10, 0)
@@ -602,7 +602,7 @@ class TestSemanticToolsExceptionHandling:
     @pytest.mark.asyncio
     async def test_get_document_symbols_handles_exception(self, mock_codebase_root):
         """Test exception handling."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             mock_get.side_effect = Exception("Symbol lookup failed")
 
             result = await get_document_symbols("backend/app/config.py")
@@ -613,7 +613,7 @@ class TestSemanticToolsExceptionHandling:
     @pytest.mark.asyncio
     async def test_get_callers_handles_exception(self, mock_codebase_root):
         """Test exception handling."""
-        with patch("app.tools.semantic.get_lsp_manager") as mock_get:
+        with patch("app.tools.semantic.get_code_manager") as mock_get:
             mock_get.side_effect = Exception("Call hierarchy failed")
 
             result = await get_callers("backend/app/config.py", "get_settings", 45, 0)

@@ -1,6 +1,9 @@
 """Configuration settings for the Glass Box Portfolio backend."""
 
+import os
 from functools import lru_cache
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -31,10 +34,10 @@ class Settings(BaseSettings):
     ]
 
     # Model Settings
-    model_name: str = "google-gla:gemini-2.0-flash"
+    model_name: str = "google-gla:gemini-3-flash-preview"
 
     # Codebase Oracle Settings
-    codebase_root: str = "/home/george-dekermenjian/git/george-dekermenjian"
+    codebase_root: str = Field(default_factory=os.getcwd)
     max_file_lines: int = 500
 
 

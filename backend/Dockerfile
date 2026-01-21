@@ -2,16 +2,36 @@
 # Production-grade Dockerfile optimized for Google Cloud Run
 #
 # Build: docker build -t glass-box-backend .
+# Build with specific commit: docker build --build-arg CODEBASE_COMMIT_HASH=abc123 -t glass-box-backend .
 # Run:   docker run -p 8080:8080 -e GEMINI_API_KEY=... glass-box-backend
+
+# -----------------------------------------------------------------------------
+# Build arguments for codebase cloning
+# -----------------------------------------------------------------------------
+ARG CODEBASE_REPO_URL=https://github.com/ged1182/george-dekermenjian.git
+ARG CODEBASE_COMMIT_HASH=main
 
 # -----------------------------------------------------------------------------
 # Stage 1: Build stage - Install dependencies with uv
 # -----------------------------------------------------------------------------
 FROM python:3.13-slim AS builder
 
+# Re-declare ARGs after FROM to make them available in this stage
+ARG CODEBASE_REPO_URL
+ARG CODEBASE_COMMIT_HASH
+
+# Install git for cloning the codebase
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+
 # Install uv for fast dependency management
 # https://docs.astral.sh/uv/
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Clone the codebase for the Codebase Oracle tools
+# Use shallow clone for faster builds
+RUN git clone --depth 1 ${CODEBASE_REPO_URL} /codebase && \
+    cd /codebase && \
+    git checkout ${CODEBASE_COMMIT_HASH} || true
 
 # Set working directory
 WORKDIR /app
@@ -38,6 +58,11 @@ RUN uv sync --frozen --no-dev
 # -----------------------------------------------------------------------------
 FROM python:3.13-slim AS runtime
 
+# Install git for runtime codebase cloning (dev mode) and curl for health checks
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git curl && \
+    rm -rf /var/lib/apt/lists/*
+
 # Security: Create non-root user
 # Cloud Run runs as non-root by default, but this ensures consistency
 RUN groupadd --gid 1000 appgroup && \
@@ -52,15 +77,20 @@ COPY --from=builder --chown=appuser:appgroup /app/.venv /app/.venv
 # Copy application code
 COPY --from=builder --chown=appuser:appgroup /app /app
 
+# Copy the cloned codebase for the Codebase Oracle tools
+COPY --from=builder --chown=appuser:appgroup /codebase /codebase
+
 # Set environment variables
 # - PATH: Include the virtual environment binaries
 # - PYTHONDONTWRITEBYTECODE: Don't write .pyc files (already compiled)
 # - PYTHONUNBUFFERED: Ensure logs are immediately flushed (important for Cloud Run)
 # - PYTHONFAULTHANDLER: Better error tracebacks
+# - CODEBASE_ROOT: Path to the cloned codebase for Oracle tools
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONFAULTHANDLER=1
+ENV CODEBASE_ROOT=/codebase
 
 # Cloud Run default port
 ENV PORT=8080

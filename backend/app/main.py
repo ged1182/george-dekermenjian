@@ -142,13 +142,15 @@ def _extract_user_message(messages: list[dict[str, Any]]) -> str:
 
 
 def _format_data_chunk(data: dict[str, Any]) -> str:
-    """Format a data annotation chunk in Vercel AI Data Stream Protocol.
+    """Format a data part chunk in Vercel AI SDK v5 SSE format.
 
-    The Vercel AI SDK collects all type 8 data chunks into an array that
-    gets passed to the onData callback. We emit each entry directly (not
-    wrapped in an array) so the frontend receives [{entry1}, {entry2}, ...].
+    AI SDK v5 uses Server-Sent Events format. Data parts should be sent as:
+    data: {"type":"data-brainlog","data":{...}}
+
+    The onData callback receives objects with custom type patterns (data-*).
     """
-    return f"8:{json.dumps(data)}\n"
+    wrapper = {"type": "data-brainlog", "data": data}
+    return f"data: {json.dumps(wrapper)}\n\n"
 
 
 class _CachedBodyRequest(Request):
@@ -192,15 +194,86 @@ async def chat(request: Request) -> Response:
         cached_request, agent=portfolio_agent
     )
 
+    # Check if we got a StreamingResponse (normal case) or plain Response (error case)
+    if not hasattr(adapter_response, "body_iterator"):
+        return adapter_response
+
     # Wrap the response to inject brain log entries
     async def generate_with_brain_log():
         # Emit initial brain log entries (input received)
         for entry in collector.get_pending_entries():
             yield _format_data_chunk(entry.to_stream_dict())
 
-        # Stream the adapter response
+        # Track accumulated content for brain log entries
+        reasoning_buffers: dict[str, str] = {}
+        text_buffers: dict[str, str] = {}
+        first_text_logged = False
+
+        # Stream the adapter response, parsing events for brain log
         async for chunk in adapter_response.body_iterator:
             yield chunk
+
+            # Parse SSE chunk to extract event data
+            chunk_str = chunk.decode("utf-8") if isinstance(chunk, bytes) else chunk
+            for line in chunk_str.split("\n"):
+                if not line.startswith("data: "):
+                    continue
+                data_str = line[6:].strip()
+                if data_str == "[DONE]":
+                    continue
+                try:
+                    event = json.loads(data_str)
+                except json.JSONDecodeError:
+                    continue
+
+                event_type = event.get("type", "")
+                event_id = event.get("id", "")
+
+                # Track reasoning/thinking
+                if event_type == "reasoning-start":
+                    reasoning_buffers[event_id] = ""
+                elif event_type == "reasoning-delta":
+                    if event_id in reasoning_buffers:
+                        reasoning_buffers[event_id] += event.get("delta", "")
+                elif event_type == "reasoning-end":
+                    if event_id in reasoning_buffers:
+                        text = reasoning_buffers.pop(event_id)
+                        if text:
+                            collector.add_thinking_entry(text)
+                            for entry in collector.get_pending_entries():
+                                yield _format_data_chunk(entry.to_stream_dict())
+
+                # Track text output
+                elif event_type == "text-start":
+                    text_buffers[event_id] = ""
+                    # Log first text token time
+                    if not first_text_logged:
+                        collector.record_first_token()
+                        first_text_logged = True
+                elif event_type == "text-delta":
+                    if event_id in text_buffers:
+                        text_buffers[event_id] += event.get("delta", "")
+                    elif not first_text_logged:
+                        collector.record_first_token()
+                        first_text_logged = True
+                elif event_type == "text-end":
+                    if event_id in text_buffers:
+                        text = text_buffers.pop(event_id)
+                        if text:
+                            collector.add_text_entry(text)
+                            for entry in collector.get_pending_entries():
+                                yield _format_data_chunk(entry.to_stream_dict())
+
+            # Check for new entries (tool calls added during streaming)
+            for entry in collector.get_pending_entries():
+                yield _format_data_chunk(entry.to_stream_dict())
+
+        # Emit any remaining text buffers
+        for text in text_buffers.values():
+            if text:
+                collector.add_text_entry(text)
+                for entry in collector.get_pending_entries():
+                    yield _format_data_chunk(entry.to_stream_dict())
 
         # Emit performance metrics at the end
         collector.add_performance_entry(
