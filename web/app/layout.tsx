@@ -20,14 +20,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Glass Box Portfolio",
+  title: "Glass Box Portfolio | George Dekermenjian",
   description:
-    "A production-grade demonstration of explainable, agentic systems. Toggle between polished UX and transparent engineering view.",
+    "A production-grade demonstration of explainable, agentic systems. Toggle between polished UX and transparent engineering view showing real-time agent reasoning.",
+  keywords: [
+    "AI portfolio",
+    "explainable AI",
+    "agentic systems",
+    "pydantic-ai",
+    "Next.js",
+    "FastAPI",
+    "Gemini",
+    "George Dekermenjian",
+  ],
+  authors: [{ name: "George Dekermenjian" }],
   openGraph: {
-    title: "Glass Box Portfolio",
+    title: "Glass Box Portfolio | Explainable AI Systems",
     description:
-      "Explore how modern AI systems actually behave in production with transparent visibility into agent decisions.",
+      "Explore how modern AI systems actually behave in production. Toggle between polished UX and transparent engineering view showing real-time agent reasoning, tool calls, and performance metrics.",
     type: "website",
+    siteName: "Glass Box Portfolio",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Glass Box Portfolio | Explainable AI Systems",
+    description:
+      "See how modern AI agents actually work. Transparent visibility into reasoning, tool selection, and performance.",
   },
 };
 
