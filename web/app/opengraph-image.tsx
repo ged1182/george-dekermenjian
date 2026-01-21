@@ -73,28 +73,44 @@ export default async function Image() {
           <div
             style={{
               display: "flex",
-              fontSize: "64px",
+              fontSize: "56px",
               fontWeight: "bold",
               color: "#ffffff",
               marginBottom: "16px",
               letterSpacing: "-0.02em",
+              textAlign: "center",
             }}
           >
-            Glass Box Portfolio
+            George Dekermenjian
           </div>
 
           {/* Subtitle */}
           <div
             style={{
               display: "flex",
-              fontSize: "28px",
-              color: "#a1a1aa",
+              fontSize: "32px",
+              color: "#60a5fa",
               textAlign: "center",
               maxWidth: "800px",
               lineHeight: 1.4,
+              marginBottom: "8px",
             }}
           >
-            Explainable AI Systems with Transparent Agent Reasoning
+            Interactive AI Portfolio
+          </div>
+
+          {/* Description */}
+          <div
+            style={{
+              display: "flex",
+              fontSize: "22px",
+              color: "#a1a1aa",
+              textAlign: "center",
+              maxWidth: "700px",
+              lineHeight: 1.4,
+            }}
+          >
+            Ask me anything — watch the AI think in real-time
           </div>
 
           {/* Tags */}
@@ -135,9 +151,9 @@ export default async function Image() {
             fontSize: "20px",
           }}
         >
-          <span>by George Dekermenjian</span>
-          <span>•</span>
           <span>Director of Data & AI</span>
+          <span>•</span>
+          <span>Explainable AI Systems</span>
         </div>
       </div>
     ),
