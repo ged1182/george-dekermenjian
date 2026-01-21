@@ -47,7 +47,7 @@ function EducationEntry({ education }: EducationEntryProps) {
         </div>
 
         {/* Highlights */}
-        {education.highlights.length > 0 && (
+        {education.highlights && education.highlights.length > 0 && (
           <div className="mt-3 border-t pt-3">
             <ul className="space-y-1.5">
               {education.highlights.map((highlight, idx) => (
