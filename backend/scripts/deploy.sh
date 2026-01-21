@@ -19,13 +19,17 @@
 #   1. Enable APIs:
 #      gcloud services enable run.googleapis.com secretmanager.googleapis.com
 #
-#   2. Create secret:
-#      echo -n "your-api-key" | gcloud secrets create gemini-api-key --data-file=-
+#   2. Create secrets:
+#      echo -n "your-gemini-api-key" | gcloud secrets create gemini-api-key --data-file=-
+#      echo -n "phc_your_posthog_key" | gcloud secrets create posthog-api-key --data-file=-
 #
-#   3. Grant Cloud Run access to secret:
-#      gcloud secrets add-iam-policy-binding gemini-api-key \
-#        --member="serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
-#        --role="roles/secretmanager.secretAccessor"
+#   3. Grant Cloud Run access to secrets:
+#      PROJECT_NUMBER=$(gcloud projects describe PROJECT_ID --format='value(projectNumber)')
+#      for SECRET in gemini-api-key posthog-api-key; do
+#        gcloud secrets add-iam-policy-binding $SECRET \
+#          --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+#          --role="roles/secretmanager.secretAccessor"
+#      done
 
 set -euo pipefail
 

@@ -104,6 +104,17 @@ spec:
                   name: gemini-api-key
                   key: latest
 
+            # PostHog Analytics
+            # Create secret: echo -n "phc_xxx" | gcloud secrets create posthog-api-key --data-file=-
+            - name: POSTHOG_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-api-key
+                  key: latest
+
+            - name: POSTHOG_HOST
+              value: "https://eu.i.posthog.com"
+
           # Health Checks
           # -------------
           # Cloud Run uses these to determine container readiness
