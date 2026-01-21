@@ -9,8 +9,9 @@ services:
     volumes:
       # Mount source code for hot reload
       - ./app:/app/app:ro
+    env_file:
+      - .env
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - CODEBASE_ROOT=/tmp/george-dekermenjian
       - CODEBASE_REPO_URL=https://github.com/ged1182/george-dekermenjian.git
       - CODEBASE_COMMIT_HASH=${CODEBASE_COMMIT_HASH:-main}
