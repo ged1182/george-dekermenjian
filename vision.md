@@ -255,11 +255,12 @@ This grounds the system in real deployment constraints without becoming an ops d
 
 | Layer | Technology | Notes |
 |-------|------------|-------|
-| Runtime | **Python 3.13+** | Latest features, performance improvements |
+| Runtime | **Python 3.12+** | Stable with latest features |
 | Framework | **FastAPI** | Async-first, OpenAPI generation |
 | Agent Framework | **pydantic-ai** | Structured agents with schema validation |
-| LLM | **Gemini 3 Flash** | `gemini-3-flash-preview`, fast inference |
+| LLM | **Gemini 3 Flash** | `google-gla:gemini-3-flash-preview`, fast inference |
 | Streaming | **VercelAIAdapter** | Native integration with Vercel AI SDK |
+| Testing | **pytest-asyncio** | Async test support with `asyncio_mode = "auto"` |
 | Deployment | **Cloud Run** | Autoscaling, containerized |
 
 **Streaming Pattern:**
@@ -272,7 +273,7 @@ from starlette.responses import Response
 from pydantic_ai import Agent
 from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 
-agent = Agent('google-gla:gemini-3-flash-preview')
+agent = Agent('google-gla:gemini-3-flash-preview')  # Model with thinking/reasoning enabled
 
 app = FastAPI()
 
@@ -411,44 +412,50 @@ This section provides the detailed execution plan for shipping Phase 1.
 ### **9.1 Project Structure**
 
 ```
-glass-box-portfolio/
-├── frontend/                    # Next.js app
+george-dekermenjian/
+├── web/                         # Next.js 16 app
 │   ├── app/
-│   │   ├── layout.tsx
+│   │   ├── layout.tsx          # Root layout with GlassBoxProvider
 │   │   ├── page.tsx            # Landing / chat interface
-│   │   └── api/                # Edge functions (if needed)
+│   │   └── profile/page.tsx    # Profile page
 │   ├── components/
 │   │   ├── ui/                 # shadcn components
+│   │   ├── ai-elements/        # AI Elements library components
 │   │   ├── chat/
-│   │   │   ├── ChatInterface.tsx
-│   │   │   ├── MessageBubble.tsx
-│   │   │   └── StreamingMessage.tsx
-│   │   └── glass-box/
-│   │       ├── GlassBoxToggle.tsx
-│   │       ├── BrainLog.tsx
-│   │       └── LogEntry.tsx
+│   │   │   └── ChatInterface.tsx
+│   │   ├── glass-box/
+│   │   │   ├── GlassBoxToggle.tsx
+│   │   │   ├── GlassBoxProvider.tsx
+│   │   │   ├── BrainLog.tsx
+│   │   │   └── LogEntry.tsx
+│   │   └── tool-results/       # Rich tool result renderers
 │   ├── lib/
-│   │   └── api.ts              # Backend client
+│   │   ├── api.ts              # Backend client + Brain Log types
+│   │   └── utils.ts            # cn() helper
 │   └── package.json
 │
 ├── backend/                     # FastAPI app
 │   ├── app/
-│   │   ├── main.py             # FastAPI entrypoint
-│   │   ├── agent.py            # pydantic-ai agent definition
+│   │   ├── main.py             # FastAPI entrypoint with Brain Log streaming
+│   │   ├── agent.py            # pydantic-ai agent with logged tools
+│   │   ├── brain_log_stream.py # Brain Log streaming utilities
+│   │   ├── config.py           # Pydantic Settings
 │   │   ├── tools/
-│   │   │   ├── __init__.py
-│   │   │   ├── experience.py   # Professional experience tool
-│   │   │   └── codebase.py     # Codebase Oracle tool
-│   │   ├── schemas/
-│   │   │   ├── __init__.py
-│   │   │   └── brain_log.py    # Structured log schemas
-│   │   └── config.py           # Settings & secrets
+│   │   │   ├── experience.py   # Profile/experience tools
+│   │   │   ├── codebase.py     # Codebase Oracle tools
+│   │   │   ├── semantic.py     # LSP-powered semantic tools
+│   │   │   ├── architecture.py # Module structure analysis
+│   │   │   └── lsp_client.py   # Language Server Protocol client
+│   │   └── schemas/
+│   │       └── brain_log.py    # Brain Log entry schemas
+│   ├── tests/                  # pytest-asyncio tests
+│   ├── scripts/deploy.sh       # Cloud Run deployment
 │   ├── Dockerfile
-│   ├── requirements.txt
 │   └── pyproject.toml
 │
-├── docs/                        # This document lives here
-└── README.md
+├── .github/workflows/ci.yml    # CI pipeline
+├── vision.md                   # This document
+└── CLAUDE.md                   # Claude Code instructions
 ```
 
 ---
@@ -513,7 +520,8 @@ When a question is outside your scope, explain your boundaries.
 | C2 | Implement `find_symbol` tool | Locates function/class definitions |
 | C3 | Implement `get_file_content` tool | Returns file with line numbers |
 | C4 | Implement `find_references` tool | Shows where symbols are used |
-| C5 | Add tool output to Brain Log | Oracle operations visible |
+| C5 | Add LSP-powered semantic tools | `go_to_definition`, `find_all_references`, `get_type_info`, `get_document_symbols`, `get_callers` |
+| C6 | Add tool output to Brain Log | Oracle operations visible |
 
 **Exit Criteria:** Agent can answer "How does the chat endpoint work?" with actual code references.
 
@@ -762,16 +770,19 @@ Week 3: Ship
 
 Phase 1 is complete when:
 
-- [ ] User can have a multi-turn conversation with the agent
-- [ ] Agent uses tools to answer questions about experience and architecture
-- [ ] Glass Box toggle shows/hides Brain Log panel
-- [ ] Brain Log shows: input received, tool selection, validation, timing
-- [ ] Codebase Oracle answers "How does X work?" with real code references
+- [x] User can have a multi-turn conversation with the agent
+- [x] Agent uses tools to answer questions about experience and architecture
+- [x] Glass Box toggle shows/hides Brain Log panel
+- [x] Brain Log shows: input received, thinking, text, tool calls, tool results, timing
+- [x] Codebase Oracle answers "How does X work?" with real code references
+- [x] LSP-powered semantic tools for advanced code analysis
+- [x] CI/CD pipeline configured (GitHub Actions)
+- [x] Test suite with pytest-asyncio (backend) and vitest (frontend)
 - [ ] Frontend deployed to Vercel with production URL
 - [ ] Backend deployed to Cloud Run, autoscaling works
 - [ ] Cold start latency documented
-- [ ] README explains how to run locally
-- [ ] A technical reviewer can understand the system in under 5 minutes
+- [x] README explains how to run locally
+- [x] A technical reviewer can understand the system in under 5 minutes
 
 ---
 

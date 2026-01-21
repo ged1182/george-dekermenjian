@@ -172,12 +172,12 @@ make format     # Format code
 - **Utilities**: `cn()` helper in `lib/utils.ts` (clsx + tailwind-merge)
 
 ### Backend
-- **Runtime**: Python 3.14+
+- **Runtime**: Python 3.12+
 - **Framework**: FastAPI
 - **Agent Framework**: pydantic-ai with VercelAIAdapter for streaming
-- **LLM**: Google Gemini (`google-gla:gemini-2.0-flash`)
+- **LLM**: Google Gemini (`google-gla:gemini-3-flash-preview`) with thinking/reasoning enabled
 - **Package Manager**: uv
-- **Testing**: pytest with httpx for async testing
+- **Testing**: pytest-asyncio (mode=auto) with httpx for async testing
 
 ## Architecture
 
@@ -187,7 +187,7 @@ The core differentiator is transparent visibility into agentic systems:
 - **Glass Box Mode**: Shows Brain Log panel with real-time agent reasoning, tool calls, validation status, and performance metrics
 
 ### Agent Tools
-The pydantic-ai agent currently has **6 registered tools** (defined in `agent.py`):
+The pydantic-ai agent currently has **11 registered tools** (defined in `agent.py`), all wrapped with `logged_tool` decorator for Brain Log integration:
 
 **Experience Tools** (`tools/experience.py`):
 - `get_professional_experience()` - Returns work history and roles
@@ -195,25 +195,41 @@ The pydantic-ai agent currently has **6 registered tools** (defined in `agent.py
 - `get_projects()` - Returns notable project details
 
 **Codebase Oracle Tools** (`tools/codebase.py`):
-- `find_symbol(symbol_name)` - Find function/class definitions
+- `clone_codebase()` - Clone/access the repository (call first for codebase questions)
+- `get_folder_tree(path)` - See directory structure
 - `get_file_content(file_path, start_line, end_line)` - Read file content with optional line range
-- `find_references(symbol_name)` - Find all usages of a symbol
+
+**Semantic (LSP-Powered) Tools** (`tools/semantic.py`):
+- `go_to_definition(file_path, symbol)` - Find where a symbol is defined
+- `find_all_references(file_path, symbol)` - Find all usages of a symbol
+- `get_type_info(file_path, symbol)` - Get type signatures and documentation
+- `get_document_symbols(file_path)` - See structure of a file
+- `get_callers(file_path, symbol)` - Find what calls a function
 
 **Additional Tool Modules** (available but not currently registered in agent):
 - `tools/architecture.py` - `get_module_structure()`, `get_dependency_graph()`, `get_api_contract()`
-- `tools/semantic.py` - LSP-powered `go_to_definition()`, `find_references_lsp()`, `get_hover_info()`
 - `tools/lsp_client.py` - Language Server Protocol client manager
 
 ### Brain Log Entry Types
+The Brain Log captures a complete audit trail of agent activity:
 ```typescript
-type LogEntryType = 'input' | 'routing' | 'tool_call' | 'validation' | 'performance';
+type LogEntryType = 'input' | 'thinking' | 'text' | 'tool_call' | 'tool_result' | 'performance';
 type LogEntryStatus = 'pending' | 'success' | 'failure';
 ```
+
+Entry types:
+- `input` - User message received
+- `thinking` - Model reasoning/thinking (when enabled via GoogleModelSettings)
+- `text` - Model text output
+- `tool_call` - Tool invocation (pending state)
+- `tool_result` - Tool completion with result preview or error
+- `performance` - Request timing (total_ms, ttft_ms)
 
 ### API Endpoints
 - `GET /` - API info
 - `GET /health` - Health check with uptime
-- `POST /chat` - Streaming chat endpoint (Vercel AI protocol)
+- `GET /profile` - Full profile data for profile page
+- `POST /chat` - Streaming chat endpoint with Brain Log (Vercel AI protocol)
 - `GET /docs` - OpenAPI documentation
 - `GET /redoc` - ReDoc documentation
 
@@ -315,10 +331,12 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push:
 
 - [x] Glass Box toggle shows/hides Brain Log panel
 - [x] Agentic chat with streaming responses
-- [x] Brain Log shows: input received, tool calls, validation, timing
-- [x] Codebase Oracle tools implemented
+- [x] Brain Log shows: input, thinking, text, tool calls, tool results, timing
+- [x] Codebase Oracle tools (clone, folder tree, file content)
+- [x] Semantic/LSP tools (go_to_definition, find_references, type_info, etc.)
+- [x] Experience tools (professional_experience, skills, projects)
 - [x] Dockerfile and Cloud Run config ready
-- [x] CI/CD pipeline configured
-- [x] Test suite with good coverage
+- [x] CI/CD pipeline configured (GitHub Actions)
+- [x] Test suite with pytest-asyncio (backend) and vitest (frontend)
 - [ ] Production deployment (pending)
 - [ ] Cold start latency documented (pending)
