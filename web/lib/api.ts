@@ -99,6 +99,9 @@ export const API_BASE_URL = isProduction ? '' : LOCAL_BACKEND_URL;
 // Chat endpoint: use /api/chat proxy in production, direct backend in development
 export const CHAT_ENDPOINT = isProduction ? '/api/chat' : `${LOCAL_BACKEND_URL}/chat`;
 
+// Profile endpoint: use /api/profile proxy in production, direct backend in development
+export const PROFILE_ENDPOINT = isProduction ? '/api/profile' : `${LOCAL_BACKEND_URL}/profile`;
+
 // ============================================================================
 // Type Guards
 // ============================================================================
@@ -253,7 +256,7 @@ export function getTypeColorClass(type: LogEntryType): string {
  * Fetches profile data from the backend
  */
 export async function fetchProfile(): Promise<ProfileData> {
-  const response = await fetch(`${API_BASE_URL}/profile`);
+  const response = await fetch(PROFILE_ENDPOINT);
   if (!response.ok) {
     throw new Error(`Failed to fetch profile: ${response.statusText}`);
   }
