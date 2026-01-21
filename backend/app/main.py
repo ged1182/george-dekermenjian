@@ -21,6 +21,12 @@ from app.config import get_settings
 from app.agent import portfolio_agent
 from app.tools.experience import get_full_profile, ProfileData
 from app.schemas.brain_log import BrainLogCollector, set_brain_log_collector
+from app.posthog_client import (
+    init_posthog,
+    shutdown_posthog,
+    set_distinct_id,
+    capture,
+)
 
 settings = get_settings()
 
@@ -37,8 +43,14 @@ async def lifespan(app: FastAPI):
     app.state.startup_time = startup_time
     print(f"Starting {settings.app_name} v{settings.app_version}")
     print(f"Using model: {settings.model_name}")
+
+    # Initialize PostHog
+    init_posthog()
+
     yield
+
     # Shutdown
+    shutdown_posthog()
     print("Shutting down...")
 
 
@@ -71,6 +83,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def posthog_correlation_middleware(request: Request, call_next):
+    """Extract PostHog distinct_id from headers for correlation.
+
+    The frontend sends the PostHog distinct_id in the X-PostHog-Distinct-ID header.
+    This allows us to correlate backend events with frontend events for the same user.
+    """
+    distinct_id = request.headers.get("X-PostHog-Distinct-ID")
+    set_distinct_id(distinct_id)
+
+    response = await call_next(request)
+    return response
 
 
 @app.get("/health")
@@ -186,6 +212,15 @@ async def chat(request: Request) -> Response:
     collector.add_input_entry(user_message)
     set_brain_log_collector(collector)
 
+    # Track chat message received
+    capture(
+        "chat_message_sent",
+        {
+            "message_length": len(user_message),
+            "message_count": len(messages),
+        },
+    )
+
     # Create a new request with the cached body for VercelAIAdapter
     cached_request = _CachedBodyRequest(dict(request.scope), body_bytes)
 
@@ -276,12 +311,23 @@ async def chat(request: Request) -> Response:
                     yield _format_data_chunk(entry.to_stream_dict())
 
         # Emit performance metrics at the end
+        total_ms = collector.get_total_ms()
+        ttft_ms = collector.get_ttft_ms()
         collector.add_performance_entry(
-            total_ms=collector.get_total_ms(),
-            ttft_ms=collector.get_ttft_ms(),
+            total_ms=total_ms,
+            ttft_ms=ttft_ms,
         )
         for entry in collector.get_pending_entries():
             yield _format_data_chunk(entry.to_stream_dict())
+
+        # Track chat completion
+        capture(
+            "chat_message_completed",
+            {
+                "total_ms": total_ms,
+                "ttft_ms": ttft_ms,
+            },
+        )
 
     return StreamingResponse(
         generate_with_brain_log(),

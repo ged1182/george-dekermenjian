@@ -19,6 +19,8 @@ class Settings(BaseSettings):
 
     # API Keys
     gemini_api_key: str = ""
+    posthog_api_key: str = ""
+    posthog_host: str = "https://eu.i.posthog.com"
 
     # Application Settings
     app_name: str = "Glass Box Portfolio"

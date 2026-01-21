@@ -253,10 +253,27 @@ export function getTypeColorClass(type: LogEntryType): string {
 // ============================================================================
 
 /**
+ * Gets headers for backend API requests, including PostHog correlation ID.
+ * Import posthog dynamically to avoid SSR issues.
+ */
+export function getCorrelationHeaders(): Record<string, string> {
+  if (typeof window === "undefined") {
+    return {};
+  }
+  // Dynamic import to avoid SSR issues
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const posthog = require("posthog-js").default;
+  const distinctId = posthog.get_distinct_id?.();
+  return distinctId ? { "X-PostHog-Distinct-ID": distinctId } : {};
+}
+
+/**
  * Fetches profile data from the backend
  */
 export async function fetchProfile(): Promise<ProfileData> {
-  const response = await fetch(PROFILE_ENDPOINT);
+  const response = await fetch(PROFILE_ENDPOINT, {
+    headers: getCorrelationHeaders(),
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch profile: ${response.statusText}`);
   }
