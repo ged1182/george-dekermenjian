@@ -18,6 +18,9 @@ import posthog
 from posthog import Posthog
 
 from app.config import get_settings
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Context variable to store the current request's distinct_id
 _distinct_id_var: ContextVar[str | None] = ContextVar(
@@ -38,7 +41,7 @@ def init_posthog() -> Posthog | None:
     settings = get_settings()
 
     if not settings.posthog_api_key:
-        print("PostHog API key not configured, analytics disabled")
+        logger.info("PostHog API key not configured, analytics disabled")
         return None
 
     _client = Posthog(
@@ -51,7 +54,7 @@ def init_posthog() -> Posthog | None:
     # Disable automatic capture - we'll capture events explicitly
     posthog.disabled = False
 
-    print(f"PostHog initialized with host: {settings.posthog_host}")
+    logger.info("PostHog initialized with host: %s", settings.posthog_host)
     return _client
 
 
@@ -65,12 +68,12 @@ def shutdown_posthog() -> None:
         _client.flush()
         _client.shutdown()
         _client = None
-        print("PostHog client shutdown complete")
+        logger.info("PostHog client shutdown complete")
 
 
 def _on_posthog_error(error: Exception) -> None:
     """Error handler for PostHog client."""
-    print(f"PostHog error: {error}")
+    logger.error("PostHog error: %s", error)
 
 
 def set_distinct_id(distinct_id: str | None) -> None:

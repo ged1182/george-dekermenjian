@@ -12,7 +12,10 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from ..config import get_settings
+from ..logging_config import get_logger
 from .lsp_client import get_code_manager
+
+logger = get_logger(__name__)
 
 
 class DefinitionLocation(BaseModel):
@@ -205,7 +208,7 @@ async def go_to_definition(
     Returns:
         DefinitionResult with the definition locations and type info.
     """
-    print(f"[TOOL] go_to_definition called: {symbol_name} in {file_path}")
+    logger.debug("go_to_definition called: %s in %s", symbol_name, file_path)
     settings = get_settings()
     root = Path(settings.codebase_root)
     full_path = root / file_path
@@ -312,7 +315,7 @@ async def find_all_references(
     Returns:
         ReferencesResult with all reference locations.
     """
-    print(f"[TOOL] find_all_references called: {symbol_name} in {file_path}")
+    logger.debug("find_all_references called: %s in %s", symbol_name, file_path)
     settings = get_settings()
     root = Path(settings.codebase_root)
     full_path = root / file_path
@@ -421,7 +424,7 @@ async def get_type_info(
     Returns:
         TypeInfo with the type signature and documentation.
     """
-    print(f"[TOOL] get_type_info called: {symbol_name} in {file_path}")
+    logger.debug("get_type_info called: %s in %s", symbol_name, file_path)
     settings = get_settings()
     root = Path(settings.codebase_root)
     full_path = root / file_path
@@ -511,7 +514,7 @@ async def get_document_symbols(file_path: str) -> DocumentSymbolsResult:
     Returns:
         DocumentSymbolsResult with all symbols in the file.
     """
-    print(f"[TOOL] get_document_symbols called: {file_path}")
+    logger.debug("get_document_symbols called: %s", file_path)
     settings = get_settings()
     root = Path(settings.codebase_root)
     full_path = root / file_path
@@ -588,7 +591,7 @@ async def get_callers(
     Returns:
         CallHierarchyResult with all callers of the function.
     """
-    print(f"[TOOL] get_callers called: {function_name} in {file_path}")
+    logger.debug("get_callers called: %s in %s", function_name, file_path)
     settings = get_settings()
     root = Path(settings.codebase_root)
     full_path = root / file_path
