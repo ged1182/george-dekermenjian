@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     codebase_root: str = Field(default_factory=os.getcwd)
     max_file_lines: int = 500
 
+    # Database Settings
+    database_url: str = ""
+
+    # TokenLedger Settings
+    tokenledger_enabled: bool = True
+    tokenledger_environment: str = "development"
+
 
 @lru_cache
 def get_settings() -> Settings:

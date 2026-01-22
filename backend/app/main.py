@@ -12,6 +12,7 @@ import time
 from contextlib import asynccontextmanager
 from typing import Any
 
+import tokenledger
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -48,6 +49,19 @@ async def lifespan(app: FastAPI):
     app.state.startup_time = startup_time
     logger.info("Starting %s v%s", settings.app_name, settings.app_version)
     logger.info("Using model: %s", settings.model_name)
+
+    # Initialize TokenLedger for LLM cost tracking
+    if settings.tokenledger_enabled and settings.database_url:
+        tokenledger.configure(
+            database_url=settings.database_url,
+            app_name="glass-box-portfolio",
+            environment=settings.tokenledger_environment,
+            async_mode=True,
+        )
+        tokenledger.patch_google()
+        logger.info("TokenLedger initialized for cost tracking")
+    elif settings.tokenledger_enabled:
+        logger.warning("TokenLedger enabled but DATABASE_URL not set - skipping")
 
     # Initialize PostHog
     init_posthog()
@@ -213,6 +227,9 @@ async def chat(request: Request) -> Response:
     messages = body.get("messages", [])
     user_message = _extract_user_message(messages)
 
+    # Extract user ID for cost attribution
+    distinct_id = request.headers.get("X-PostHog-Distinct-ID")
+
     # Create brain log collector for this request
     collector = BrainLogCollector()
     collector.add_input_entry(user_message)
@@ -231,9 +248,15 @@ async def chat(request: Request) -> Response:
     cached_request = _CachedBodyRequest(dict(request.scope), body_bytes)
 
     # Get the streaming response from VercelAIAdapter
-    adapter_response = await VercelAIAdapter.dispatch_request(
-        cached_request, agent=portfolio_agent
-    )
+    # Wrap with TokenLedger attribution for cost tracking
+    with tokenledger.attribution(
+        user_id=distinct_id,
+        feature="chat",
+        page="/chat",
+    ):
+        adapter_response = await VercelAIAdapter.dispatch_request(
+            cached_request, agent=portfolio_agent
+        )
 
     # Check if we got a StreamingResponse (normal case) or plain Response (error case)
     if not hasattr(adapter_response, "body_iterator"):
