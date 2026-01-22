@@ -57,6 +57,7 @@ async def lifespan(app: FastAPI):
             app_name="glass-box-portfolio",
             environment=settings.tokenledger_environment,
             async_mode=True,
+            schema_name="public",  # Use public schema (auto-creates tables)
         )
         tokenledger.patch_google()
         logger.info("TokenLedger initialized for cost tracking")
@@ -247,16 +248,23 @@ async def chat(request: Request) -> Response:
     # Create a new request with the cached body for VercelAIAdapter
     cached_request = _CachedBodyRequest(dict(request.scope), body_bytes)
 
-    # Get the streaming response from VercelAIAdapter
-    # Wrap with TokenLedger attribution for cost tracking
-    with tokenledger.attribution(
+    # Set TokenLedger attribution context for cost tracking
+    # Note: We set this directly (not via context manager) because the streaming
+    # response is consumed after the context manager would exit. The context
+    # persists for the entire request lifetime via contextvars.
+    from tokenledger.context import AttributionContext, set_attribution_context
+    ctx = AttributionContext(
         user_id=distinct_id,
         feature="chat",
         page="/chat",
-    ):
-        adapter_response = await VercelAIAdapter.dispatch_request(
-            cached_request, agent=portfolio_agent
-        )
+    )
+    set_attribution_context(ctx)
+    logger.debug(f"Set attribution context: user_id={distinct_id}, feature=chat, page=/chat")
+
+    # Get the streaming response from VercelAIAdapter
+    adapter_response = await VercelAIAdapter.dispatch_request(
+        cached_request, agent=portfolio_agent
+    )
 
     # Check if we got a StreamingResponse (normal case) or plain Response (error case)
     if not hasattr(adapter_response, "body_iterator"):
