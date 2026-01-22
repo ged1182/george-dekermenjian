@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { BrainIcon, TrashIcon, XIcon } from "lucide-react";
+import { BrainIcon, TrashIcon, X } from "lucide-react";
 import type { ComponentProps } from "react";
 import { memo, useEffect, useRef } from "react";
 import { useGlassBox } from "./GlassBoxProvider";
@@ -27,7 +27,7 @@ export const BrainLog = memo(function BrainLog({
   onClose,
   ...props
 }: BrainLogProps) {
-  const { entries, clearEntries, disable } = useGlassBox();
+  const { entries, clearEntries, setRightPanelMode } = useGlassBox();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new entries arrive
@@ -41,7 +41,7 @@ export const BrainLog = memo(function BrainLog({
     if (onClose) {
       onClose();
     } else {
-      disable();
+      setRightPanelMode("none");
     }
   };
 
@@ -84,11 +84,11 @@ export const BrainLog = memo(function BrainLog({
           {showCloseButton && (
             <Button
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={handleClose}
               aria-label="Close Brain Log"
             >
-              <XIcon className="size-3.5" />
+              <X className="size-4" />
             </Button>
           )}
         </div>
