@@ -27,10 +27,9 @@ spec:
       annotations:
         # Scaling Configuration
         # -----------------------
-        # minScale: 0 = Scale to zero when idle (cost savings)
+        # minScale: 1 = Always keep 1 instance warm (no cold starts)
         # maxScale: 3 = Limit max instances (cost control)
-        # For faster cold starts, set minScale: 1
-        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/minScale: "1"
         autoscaling.knative.dev/maxScale: "3"
 
         # Use second-generation execution environment for better performance
@@ -62,7 +61,7 @@ spec:
       # serviceAccountName: glass-box-backend@PROJECT_ID.iam.gserviceaccount.com
 
       containers:
-        - image: gcr.io/PROJECT_ID/glass-box-backend:latest
+        - image: us-central1-docker.pkg.dev/PROJECT_ID/glass-box/glass-box-backend:latest
 
           # Port Configuration
           ports:

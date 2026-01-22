@@ -2,28 +2,34 @@
 #
 # Glass Box Portfolio Backend - Deployment Script
 #
-# This script builds and deploys the backend to Google Cloud Run.
+# This script builds locally, pushes to Artifact Registry, and deploys to Cloud Run.
 #
 # Prerequisites:
 #   - gcloud CLI installed and authenticated
-#   - Docker installed (for local builds)
-#   - GCP project with Cloud Run API enabled
+#   - Docker installed
+#   - GCP project with Cloud Run and Artifact Registry APIs enabled
 #   - Secret Manager secret created for GEMINI_API_KEY
 #
 # Usage:
-#   ./scripts/deploy.sh              # Deploy to default project
-#   ./scripts/deploy.sh --project my-project  # Deploy to specific project
-#   ./scripts/deploy.sh --local      # Build locally instead of Cloud Build
+#   ./scripts/deploy.sh                        # Deploy to default project
+#   ./scripts/deploy.sh --project my-project   # Deploy to specific project
+#   ./scripts/deploy.sh --tag v1.0.0           # Deploy with specific tag
 #
 # Setup (one-time):
 #   1. Enable APIs:
-#      gcloud services enable run.googleapis.com secretmanager.googleapis.com
+#      gcloud services enable run.googleapis.com secretmanager.googleapis.com artifactregistry.googleapis.com
 #
-#   2. Create secrets:
+#   2. Create Artifact Registry repository:
+#      gcloud artifacts repositories create glass-box \
+#        --repository-format=docker \
+#        --location=us-central1 \
+#        --description="Glass Box Portfolio images"
+#
+#   3. Create secrets:
 #      echo -n "your-gemini-api-key" | gcloud secrets create gemini-api-key --data-file=-
 #      echo -n "phc_your_posthog_key" | gcloud secrets create posthog-api-key --data-file=-
 #
-#   3. Grant Cloud Run access to secrets:
+#   4. Grant Cloud Run access to secrets:
 #      PROJECT_NUMBER=$(gcloud projects describe PROJECT_ID --format='value(projectNumber)')
 #      for SECRET in gemini-api-key posthog-api-key; do
 #        gcloud secrets add-iam-policy-binding $SECRET \
@@ -43,8 +49,11 @@ SERVICE_NAME="glass-box-backend"
 # Default region (us-central1 has good pricing and availability)
 REGION="${REGION:-us-central1}"
 
-# Image name in Google Container Registry
-IMAGE_NAME="gcr.io/${PROJECT_ID:-PROJECT_ID}/${SERVICE_NAME}"
+# Artifact Registry repository name
+REPO_NAME="glass-box"
+
+# Image name in Artifact Registry (will be updated with actual project ID)
+IMAGE_NAME="${REGION}-docker.pkg.dev/PROJECT_ID/${REPO_NAME}/${SERVICE_NAME}"
 
 # Script directory (for relative paths)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -82,7 +91,6 @@ log_error() {
 # -----------------------------------------------------------------------------
 
 PROJECT_ID=""
-LOCAL_BUILD=false
 TAG="latest"
 DRY_RUN=false
 COMMIT_HASH=""
@@ -92,10 +100,6 @@ while [[ $# -gt 0 ]]; do
         --project|-p)
             PROJECT_ID="$2"
             shift 2
-            ;;
-        --local|-l)
-            LOCAL_BUILD=true
-            shift
             ;;
         --tag|-t)
             TAG="$2"
@@ -114,7 +118,6 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --project, -p PROJECT_ID  GCP project ID (required)"
-            echo "  --local, -l               Build locally instead of Cloud Build"
             echo "  --tag, -t TAG             Docker image tag (default: latest)"
             echo "  --commit, -c COMMIT_HASH  Git commit hash for codebase (default: current HEAD)"
             echo "  --dry-run                 Show commands without executing"
@@ -155,7 +158,7 @@ if [[ -z "$PROJECT_ID" ]]; then
 fi
 
 # Update image name with actual project ID
-IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
+IMAGE_NAME="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME}"
 
 log_info "Configuration:"
 log_info "  Project:  ${PROJECT_ID}"
@@ -163,7 +166,6 @@ log_info "  Service:  ${SERVICE_NAME}"
 log_info "  Region:   ${REGION}"
 log_info "  Image:    ${IMAGE_NAME}:${TAG}"
 log_info "  Commit:   ${COMMIT_HASH}"
-log_info "  Build:    $([ "$LOCAL_BUILD" = true ] && echo 'Local' || echo 'Cloud Build')"
 echo ""
 
 # -----------------------------------------------------------------------------
@@ -172,45 +174,41 @@ echo ""
 
 cd "$BACKEND_DIR"
 
-if [[ "$LOCAL_BUILD" = true ]]; then
-    # Local build with docker
-    log_info "Building Docker image locally..."
+# Check if docker is installed
+if ! command -v docker &> /dev/null; then
+    log_error "Docker is not installed. Please install Docker to build images."
+    exit 1
+fi
 
-    if ! command -v docker &> /dev/null; then
-        log_error "Docker is not installed for local builds."
-        exit 1
-    fi
-
-    BUILD_CMD="docker build --build-arg CODEBASE_COMMIT_HASH=${COMMIT_HASH} -t ${IMAGE_NAME}:${TAG} ."
-    if [[ "$DRY_RUN" = true ]]; then
-        log_info "Would run: $BUILD_CMD"
-    else
-        $BUILD_CMD
-        log_success "Image built: ${IMAGE_NAME}:${TAG}"
-    fi
-
-    # Push to GCR
-    log_info "Pushing image to Google Container Registry..."
-    PUSH_CMD="docker push ${IMAGE_NAME}:${TAG}"
-    if [[ "$DRY_RUN" = true ]]; then
-        log_info "Would run: $PUSH_CMD"
-    else
-        # Configure docker for GCR
-        gcloud auth configure-docker gcr.io --quiet
-        $PUSH_CMD
-        log_success "Image pushed to GCR"
-    fi
+# Build Docker image locally
+log_info "Building Docker image locally..."
+BUILD_CMD="docker build --build-arg CODEBASE_COMMIT_HASH=${COMMIT_HASH} -t ${IMAGE_NAME}:${TAG} ."
+if [[ "$DRY_RUN" = true ]]; then
+    log_info "Would run: $BUILD_CMD"
 else
-    # Cloud Build
-    log_info "Building with Google Cloud Build..."
-    # Use substitutions to pass build args to Cloud Build
-    BUILD_CMD="gcloud builds submit --tag ${IMAGE_NAME}:${TAG} --project ${PROJECT_ID} --substitutions=_CODEBASE_COMMIT_HASH=${COMMIT_HASH} ."
-    if [[ "$DRY_RUN" = true ]]; then
-        log_info "Would run: $BUILD_CMD"
-    else
-        $BUILD_CMD
-        log_success "Image built and pushed via Cloud Build"
-    fi
+    $BUILD_CMD
+    log_success "Image built: ${IMAGE_NAME}:${TAG}"
+fi
+
+# -----------------------------------------------------------------------------
+# Push to Artifact Registry
+# -----------------------------------------------------------------------------
+
+log_info "Pushing image to Artifact Registry..."
+
+# Configure docker for Artifact Registry
+if [[ "$DRY_RUN" = true ]]; then
+    log_info "Would run: gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet"
+else
+    gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+fi
+
+PUSH_CMD="docker push ${IMAGE_NAME}:${TAG}"
+if [[ "$DRY_RUN" = true ]]; then
+    log_info "Would run: $PUSH_CMD"
+else
+    $PUSH_CMD
+    log_success "Image pushed to Artifact Registry"
 fi
 
 # -----------------------------------------------------------------------------
