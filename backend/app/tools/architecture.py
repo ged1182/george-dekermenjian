@@ -14,6 +14,9 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from ..config import get_settings
+from ..logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def _check_codebase_exists() -> str | None:
@@ -424,7 +427,7 @@ def get_module_structure() -> ModuleStructureResult:
     Returns:
         ModuleStructureResult with module information and architecture pattern.
     """
-    print("[TOOL] get_module_structure called")
+    logger.debug("get_module_structure called")
 
     # Check if codebase exists
     error = _check_codebase_exists()
@@ -547,7 +550,7 @@ def get_dependency_graph(scope: str = "all") -> DependencyGraphResult:
     Returns:
         DependencyGraphResult with nodes, edges, and analysis.
     """
-    print(f"[TOOL] get_dependency_graph called with scope: {scope}")
+    logger.debug("get_dependency_graph called with scope: %s", scope)
 
     # Check if codebase exists
     error = _check_codebase_exists()
@@ -660,7 +663,7 @@ def get_api_contracts() -> APIContractsResult:
     Returns:
         APIContractsResult with all schemas and endpoints.
     """
-    print("[TOOL] get_api_contracts called")
+    logger.debug("get_api_contracts called")
 
     # Check if codebase exists
     error = _check_codebase_exists()
@@ -727,7 +730,7 @@ def explain_architecture() -> ArchitectureOverview:
     Returns:
         ArchitectureOverview with summary, tech stack, and key components.
     """
-    print("[TOOL] explain_architecture called")
+    logger.debug("explain_architecture called")
     settings = get_settings()
     root = Path(settings.codebase_root)
 
@@ -911,7 +914,7 @@ def trace_data_flow(entity_name: str) -> DataFlowResult:
     Returns:
         DataFlowResult with the traced path through the system.
     """
-    print(f"[TOOL] trace_data_flow called with: {entity_name}")
+    logger.debug("trace_data_flow called with: %s", entity_name)
     settings = get_settings()
     root = Path(settings.codebase_root)
 

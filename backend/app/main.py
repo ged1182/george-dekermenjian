@@ -27,6 +27,11 @@ from app.posthog_client import (
     set_distinct_id,
     capture,
 )
+from app.logging_config import setup_logging, get_logger
+
+# Initialize logging before anything else
+setup_logging()
+logger = get_logger(__name__)
 
 settings = get_settings()
 
@@ -41,8 +46,8 @@ async def lifespan(app: FastAPI):
     # Startup
     startup_time = time.time()
     app.state.startup_time = startup_time
-    print(f"Starting {settings.app_name} v{settings.app_version}")
-    print(f"Using model: {settings.model_name}")
+    logger.info("Starting %s v%s", settings.app_name, settings.app_version)
+    logger.info("Using model: %s", settings.model_name)
 
     # Initialize PostHog
     init_posthog()
@@ -51,7 +56,7 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     shutdown_posthog()
-    print("Shutting down...")
+    logger.info("Shutting down...")
 
 
 app = FastAPI(
@@ -78,7 +83,8 @@ def get_cors_origins() -> list[str]:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
-    allow_origin_regex=r"https://.*\.vercel\.app",  # Allow all Vercel preview deployments
+    # Only allow preview deployments from the george-dekermenjian-web project
+    allow_origin_regex=r"https://george-dekermenjian-web-[a-z0-9]+-[a-z0-9-]+\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

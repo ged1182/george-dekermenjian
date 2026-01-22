@@ -28,11 +28,14 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # CORS Settings
+    # Production: custom domain + Vercel deployments
     cors_origins: list[str] = [
         "http://localhost:3000",
         "http://localhost:3001",
         "http://localhost:3002",
-        "https://*.vercel.app",
+        "https://georgedekermenjian.com",
+        "https://www.georgedekermenjian.com",
+        "https://george-dekermenjian-web.vercel.app",
     ]
 
     # Model Settings
