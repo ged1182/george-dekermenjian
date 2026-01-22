@@ -217,44 +217,28 @@ fi
 
 log_info "Deploying to Cloud Run..."
 
-# Create a temporary service config with the actual project ID
-TEMP_CONFIG=$(mktemp)
-sed "s/PROJECT_ID/${PROJECT_ID}/g" cloud-run-service.yaml > "$TEMP_CONFIG"
-
-# Also update the image tag
-sed -i "s/:latest/:${TAG}/g" "$TEMP_CONFIG"
-
-DEPLOY_CMD="gcloud run services replace ${TEMP_CONFIG} --region ${REGION} --project ${PROJECT_ID}"
+# Deploy using gcloud run deploy with inline configuration
+# Note: Service requires authentication (no --allow-unauthenticated flag)
+DEPLOY_CMD="gcloud run deploy ${SERVICE_NAME} \
+    --image ${IMAGE_NAME}:${TAG} \
+    --region ${REGION} \
+    --project ${PROJECT_ID} \
+    --platform managed \
+    --memory 512Mi \
+    --cpu 1 \
+    --min-instances 1 \
+    --max-instances 3 \
+    --concurrency 80 \
+    --timeout 300 \
+    --set-secrets=GEMINI_API_KEY=gemini-api-key:latest,POSTHOG_API_KEY=posthog-api-key:latest \
+    --set-env-vars=ENVIRONMENT=production,POSTHOG_HOST=https://eu.i.posthog.com \
+    --no-allow-unauthenticated"
 
 if [[ "$DRY_RUN" = true ]]; then
     log_info "Would run: $DEPLOY_CMD"
-    log_info "With config:"
-    cat "$TEMP_CONFIG"
 else
-    $DEPLOY_CMD
-    log_success "Service deployed to Cloud Run"
-fi
-
-# Cleanup
-rm -f "$TEMP_CONFIG"
-
-# -----------------------------------------------------------------------------
-# Make service publicly accessible
-# -----------------------------------------------------------------------------
-
-log_info "Configuring IAM policy for public access..."
-
-IAM_CMD="gcloud run services add-iam-policy-binding ${SERVICE_NAME} \
-    --region ${REGION} \
-    --project ${PROJECT_ID} \
-    --member=\"allUsers\" \
-    --role=\"roles/run.invoker\""
-
-if [[ "$DRY_RUN" = true ]]; then
-    log_info "Would run: $IAM_CMD"
-else
-    eval "$IAM_CMD" > /dev/null
-    log_success "Public access configured"
+    eval "$DEPLOY_CMD"
+    log_success "Service deployed to Cloud Run (requires authentication)"
 fi
 
 # -----------------------------------------------------------------------------
