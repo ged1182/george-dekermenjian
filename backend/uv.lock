@@ -3077,7 +3077,7 @@ wheels = [
 [[package]]
 name = "tokenledger"
 version = "0.1.0"
-source = { git = "https://github.com/ged1182/TokenLedger.git#498dbe6e470e0d633b199aff5f13bf122cf5ea09" }
+source = { git = "https://github.com/ged1182/TokenLedger.git#7abb02ae42bff63f8b8ec4c411afcf15374bdb1f" }
 dependencies = [
     { name = "pydantic" },
     { name = "rich" },

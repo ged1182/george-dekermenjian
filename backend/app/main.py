@@ -249,17 +249,14 @@ async def chat(request: Request) -> Response:
     cached_request = _CachedBodyRequest(dict(request.scope), body_bytes)
 
     # Set TokenLedger attribution context for cost tracking
-    # Note: We set this directly (not via context manager) because the streaming
-    # response is consumed after the context manager would exit. The context
-    # persists for the entire request lifetime via contextvars.
-    from tokenledger.context import AttributionContext, set_attribution_context
-    ctx = AttributionContext(
+    # Using persistent=True because streaming responses are consumed after
+    # the context manager exits. Context stays active until clear_attribution().
+    tokenledger.attribution(
         user_id=distinct_id,
         feature="chat",
         page="/chat",
-    )
-    set_attribution_context(ctx)
-    logger.debug(f"Set attribution context: user_id={distinct_id}, feature=chat, page=/chat")
+        persistent=True,
+    ).__enter__()
 
     # Get the streaming response from VercelAIAdapter
     adapter_response = await VercelAIAdapter.dispatch_request(
@@ -365,6 +362,9 @@ async def chat(request: Request) -> Response:
                 "ttft_ms": ttft_ms,
             },
         )
+
+        # Clear persistent attribution context now that streaming is complete
+        tokenledger.clear_attribution()
 
     return StreamingResponse(
         generate_with_brain_log(),
