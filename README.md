@@ -32,8 +32,8 @@ Most AI systems are black boxes - they present polished outputs without exposing
 | Layer | Technology |
 |-------|------------|
 | **Frontend** | Next.js 16, React 19, Tailwind CSS v4, Vercel AI SDK |
-| **Backend** | FastAPI, pydantic-ai, Python 3.13+ |
-| **LLM** | Google Gemini 2.0 Flash |
+| **Backend** | FastAPI, pydantic-ai, Python 3.12+ |
+| **LLM** | Google Gemini 3 Flash |
 | **Deployment** | Vercel (frontend), Cloud Run (backend) |
 | **Testing** | pytest (backend), Vitest (frontend) |
 
@@ -42,7 +42,7 @@ Most AI systems are black boxes - they present polished outputs without exposing
 ### Prerequisites
 
 - Node.js 20+ and pnpm
-- Python 3.13+ and [uv](https://docs.astral.sh/uv/)
+- Python 3.12+ and [uv](https://docs.astral.sh/uv/)
 - Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
 
 ### 1. Clone the Repository
@@ -76,10 +76,10 @@ The app will be available at http://localhost:3000
 ### Using Make (Recommended)
 
 ```bash
-make install    # Install all dependencies
 make dev        # Run both frontend and backend
 make test       # Run all tests
 make lint       # Run linters
+make clean      # Stop and remove containers
 ```
 
 ## Environment Variables
@@ -128,17 +128,25 @@ make lint       # Run linters
 
 ### Agent Tools (Currently Registered)
 
-The pydantic-ai agent uses 6 tools:
+The pydantic-ai agent uses 12 tools:
 
 **Experience Tools** (`tools/experience.py`):
 - `get_professional_experience()` - Returns work history and roles
 - `get_skills()` - Returns categorized technical skills
 - `get_projects()` - Returns notable project details
+- `get_education()` - Returns educational background
 
 **Codebase Oracle Tools** (`tools/codebase.py`):
-- `find_symbol(symbol_name)` - Find function/class definitions
+- `clone_codebase()` - Clone/access the repository (call first for codebase questions)
+- `get_folder_tree(path)` - See directory structure
 - `get_file_content(file_path, start_line, end_line)` - Read file content
-- `find_references(symbol_name)` - Find all usages of a symbol
+
+**Semantic Tools** (`tools/semantic.py`):
+- `go_to_definition(file_path, symbol)` - Find where a symbol is defined
+- `find_all_references(file_path, symbol)` - Find all usages of a symbol
+- `get_type_info(file_path, symbol)` - Get type signatures and documentation
+- `get_document_symbols(file_path)` - See structure of a file
+- `get_callers(file_path, symbol)` - Find what calls a function
 
 ### Additional Tool Modules (Available)
 
