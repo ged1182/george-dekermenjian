@@ -3247,7 +3247,7 @@ wheels = [
 [[package]]
 name = "tokenledger"
 version = "0.1.0"
-source = { git = "https://github.com/ged1182/TokenLedger.git#e806b38d3d7450bf04579673e5ab4d5d68cb0990" }
+source = { git = "https://github.com/ged1182/TokenLedger.git#cfd12d6a6186bf7d8380a4fec101ca1b295835f7" }
 dependencies = [
     { name = "alembic" },
     { name = "psycopg2-binary" },

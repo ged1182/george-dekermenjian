@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
             app_name="glass-box-portfolio",
             environment=settings.tokenledger_environment,
             async_mode=True,
-            schema_name="public",  # Use public schema (auto-creates tables)
+            schema_name="token_ledger",  # Use dedicated schema (via CLI migrations)
         )
         tokenledger.patch_google()
         logger.info("TokenLedger initialized for cost tracking")
