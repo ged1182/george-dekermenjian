@@ -28,10 +28,11 @@
 #   3. Create secrets:
 #      echo -n "your-gemini-api-key" | gcloud secrets create gemini-api-key --data-file=-
 #      echo -n "phc_your_posthog_key" | gcloud secrets create posthog-api-key --data-file=-
+#      echo -n "postgresql://..." | gcloud secrets create database-url --data-file=-
 #
 #   4. Grant Cloud Run access to secrets:
 #      PROJECT_NUMBER=$(gcloud projects describe PROJECT_ID --format='value(projectNumber)')
-#      for SECRET in gemini-api-key posthog-api-key; do
+#      for SECRET in gemini-api-key posthog-api-key database-url; do
 #        gcloud secrets add-iam-policy-binding $SECRET \
 #          --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
 #          --role="roles/secretmanager.secretAccessor"
@@ -230,8 +231,8 @@ DEPLOY_CMD="gcloud run deploy ${SERVICE_NAME} \
     --max-instances 3 \
     --concurrency 80 \
     --timeout 300 \
-    --set-secrets=GEMINI_API_KEY=gemini-api-key:latest,POSTHOG_API_KEY=posthog-api-key:latest \
-    --set-env-vars=ENVIRONMENT=production,POSTHOG_HOST=https://eu.i.posthog.com \
+    --set-secrets=GEMINI_API_KEY=gemini-api-key:latest,POSTHOG_API_KEY=posthog-api-key:latest,DATABASE_URL=database-url:latest \
+    --set-env-vars=ENVIRONMENT=production,POSTHOG_HOST=https://eu.i.posthog.com,TOKENLEDGER_ENABLED=true,TOKENLEDGER_ENVIRONMENT=production \
     --no-allow-unauthenticated"
 
 if [[ "$DRY_RUN" = true ]]; then

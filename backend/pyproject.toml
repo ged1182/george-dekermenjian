@@ -10,6 +10,8 @@ dependencies = [
     "pydantic-ai>=1.44.0",
     "pydantic-settings>=2.12.0",
     "posthog>=3.0.0",
+    "psycopg2-binary>=2.9.11",
+    "tokenledger",
 ]
 
 [project.scripts]
@@ -29,3 +31,6 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.uv.sources]
+tokenledger = { git = "https://github.com/ged1182/TokenLedger.git" }

@@ -1,4 +1,21 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: glass-box-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: tokenledger
+      POSTGRES_PASSWORD: tokenledger
+      POSTGRES_DB: tokenledger
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tokenledger"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: .
@@ -15,9 +32,16 @@ services:
       - CODEBASE_ROOT=/tmp/george-dekermenjian
       - CODEBASE_REPO_URL=https://github.com/ged1182/george-dekermenjian.git
       - CODEBASE_COMMIT_HASH=${CODEBASE_COMMIT_HASH:-main}
+      - DATABASE_URL=postgresql://tokenledger:tokenledger@postgres:5432/tokenledger
+    depends_on:
+      postgres:
+        condition: service_healthy
     command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+volumes:
+  postgres_data:
